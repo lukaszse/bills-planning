@@ -16,12 +16,13 @@ public class CategoryService {
     public static final String CATEGORY_ALREADY_EXISTS_ERROR_MSG = "Category with name %s for user with name %s already exists";
     private final CategoryRepository categoryRepository;
 
-    public Mono<Category> createCategory(final Category category) {
-        return categoryRepository.getCategoriesByUsernameAndName(category.getUsername(), category.getName())
+    public Mono<Category> createCategory(final String username, final String categoryName) {
+        return categoryRepository.getCategoriesByUsernameAndName(username, categoryName)
                 .collectList()
-                .mapNotNull(existingCategoryList -> existingCategoryList.size() == 0 ? categoryRepository.save(category) : null)
+                .mapNotNull(existingCategoryList ->
+                        existingCategoryList.size() == 0 ? categoryRepository.save(Category.of(username, categoryName, Category.Type.CUSTOM)) : null)
                 .flatMap(mono -> mono)
-                .switchIfEmpty(Mono.error(new ConflictException(CATEGORY_ALREADY_EXISTS_ERROR_MSG.formatted(category.getUsername(), category.getName()))));
+                .switchIfEmpty(Mono.error(new ConflictException(CATEGORY_ALREADY_EXISTS_ERROR_MSG.formatted(username, categoryName))));
     }
 
     public Flux<Category> getAllCategories(final String username) {
