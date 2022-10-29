@@ -31,6 +31,9 @@ public class SpringSecurity {
                 .authorizeExchange()
                 .anyExchange().permitAll()
                 .and()
+                .oauth2ResourceServer().bearerTokenConverter(bearerTokenConverter())
+                .jwt()
+                .and().and()
                 .cors().disable()
                 .build();
     }
