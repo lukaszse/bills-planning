@@ -1,0 +1,13 @@
+package pl.com.seremak.billsplaning.utils;
+
+import org.springframework.http.ResponseEntity;
+
+import java.net.URI;
+
+public class EndpointUtils {
+
+    public static ResponseEntity<String> createResponse(final String uriPattern, final String identifier) {
+        return ResponseEntity.created(URI.create(String.format(uriPattern, identifier)))
+                .body(identifier);
+    }
+}
