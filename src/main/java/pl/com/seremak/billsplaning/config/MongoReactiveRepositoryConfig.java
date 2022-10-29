@@ -19,7 +19,8 @@ public class MongoReactiveRepositoryConfig {
     private String billsPlanningDatabaseUri;
 
 
-    public @Bean ReactiveMongoTemplate reactiveMongoTemplate() {
+    @Bean
+    public ReactiveMongoTemplate reactiveMongoTemplate() {
         return new ReactiveMongoTemplate(mongoClient(), billsPlanningDatabase);
     }
 

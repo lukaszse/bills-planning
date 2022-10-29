@@ -1,6 +1,8 @@
 package pl.com.seremak.billsplaning.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
+import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.data.mongodb.core.mapping.FieldType;
 
@@ -10,6 +12,8 @@ import javax.validation.constraints.Positive;
 import java.math.BigDecimal;
 
 @Data
+@Document
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class BillPlan {
 
     private String username;

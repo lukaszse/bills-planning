@@ -1,14 +1,14 @@
 package pl.com.seremak.billsplaning.model;
 
-import lombok.AllArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import javax.validation.constraints.NotBlank;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor(staticName = "of")
+@Document
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Category {
 
     private String username;
