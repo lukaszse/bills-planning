@@ -38,7 +38,7 @@ public class CategoryEndpoint {
 
     @GetMapping(produces = APPLICATION_JSON_VALUE)
     public Mono<ResponseEntity<List<Category>>> getAllCategories(final String username) {
-        log.info("Finding categories for user wiyh name={}", username);
+        log.info("Finding categories for user with name={}", username);
         return categoryService.getAllCategories(username)
                 .collectList()
                 .doOnSuccess(categories -> log.info("{} categories for username={} found.", categories.size(), username))
