@@ -33,7 +33,7 @@ public class CategoryEndpoint {
     @PostMapping(produces = TEXT_PLAIN_VALUE, consumes = APPLICATION_JSON_VALUE)
     public Mono<ResponseEntity<String>> createCategory(final JwtAuthenticationToken principal, @Valid @RequestBody final CategoryDto categoryDto) {
         final String username = jwtExtractionHelper.extractUsername(principal);
-        log.info("Category creation request received: {}", categoryDto.getName());
+        log.info("Category creation request for username={} and categoryName={}", username, categoryDto.getName());
         return categoryService.createCustomCategory(username, categoryDto.getName())
                 .doOnSuccess(category -> log.info("Category with name={} and username={} successfully created for", category.getName(), category.getUsername()))
                 .map(Category::getName)
@@ -65,6 +65,6 @@ public class CategoryEndpoint {
         return categoryService.deleteCategory(username, categoryName)
                 .doOnSuccess(category -> log.info("Category with name={} and username={} deleted.", category.getName(), category.getUsername()))
                 .map(Category::getName)
-                .map(ResponseEntity::ok);
+                .map(__ -> ResponseEntity.noContent().build());
     }
 }

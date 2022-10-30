@@ -2,10 +2,12 @@ package pl.com.seremak.billsplaning.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import pl.com.seremak.billsplaning.dto.BillPlanDto;
 import pl.com.seremak.billsplaning.exceptions.ConflictException;
 import pl.com.seremak.billsplaning.model.BillPlan;
 import pl.com.seremak.billsplaning.repository.BillPlanRepository;
 import pl.com.seremak.billsplaning.repository.BillPlanSearchRepository;
+import pl.com.seremak.billsplaning.utils.CollectionUtils;
 import pl.com.seremak.billsplaning.utils.VersionedEntityUtils;
 import reactor.core.publisher.Mono;
 
@@ -19,7 +21,8 @@ public class BillPlanService {
     private final BillPlanRepository billPlanRepository;
     private final BillPlanSearchRepository billPlanSearchRepository;
 
-    public Mono<BillPlan> createBillPlan(final BillPlan billPlan) {
+    public Mono<BillPlan> createBillPlan(final String username, final BillPlanDto billPlanDto) {
+        final BillPlan billPlan = BillPlan.of(username, billPlanDto.getCategoryName(), billPlanDto.getAmount());
         return billPlanRepository.getBillPlanByUsernameAndCategoryName(billPlan.getUsername(), billPlan.getCategoryName())
                 .collectList()
                 .mapNotNull(existingBillPlans -> existingBillPlans.isEmpty() ? VersionedEntityUtils.setMetadata(billPlan) : null)
@@ -28,9 +31,10 @@ public class BillPlanService {
                 .switchIfEmpty(Mono.error(new ConflictException(BILL_PLAN_ALREADY_EXISTS.formatted(billPlan.getUsername(), billPlan.getCategoryName()))));
     }
 
-    public Mono<List<BillPlan>> getBillPlanByCategoryName(final String username, final String categoryName) {
+    public Mono<BillPlan> getBillPlanByCategoryName(final String username, final String categoryName) {
         return billPlanRepository.getBillPlanByUsernameAndCategoryName(username, categoryName)
-                .collectList();
+                .collectList()
+                .map(CollectionUtils::getSoleElementOrThrowException);
     }
 
     public Mono<List<BillPlan>> getAllBillPlans(final String username) {
@@ -38,7 +42,8 @@ public class BillPlanService {
                 .collectList();
     }
 
-    public Mono<BillPlan> update(final BillPlan billPlan) {
+    public Mono<BillPlan> update(final String username, final BillPlanDto billPlanDto) {
+        final BillPlan billPlan = BillPlan.of(username, billPlanDto.getCategoryName(), billPlanDto.getAmount());
         return billPlanSearchRepository.updateBillPlan(billPlan);
     }
 

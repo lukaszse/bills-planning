@@ -1,6 +1,7 @@
 package pl.com.seremak.billsplaning.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -15,9 +16,11 @@ import java.math.BigDecimal;
 @Getter
 @Setter
 @Document
+@AllArgsConstructor(staticName = "of")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class BillPlan extends VersionedEntity {
 
+    @NotNull(message = "Username cannot be blank")
     private String username;
 
     @NotBlank(message = "Name of Category cannot be blank")
