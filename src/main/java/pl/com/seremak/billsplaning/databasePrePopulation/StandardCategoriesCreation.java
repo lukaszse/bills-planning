@@ -9,6 +9,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import pl.com.seremak.billsplaning.model.Category;
 import pl.com.seremak.billsplaning.repository.CategoryRepository;
+import pl.com.seremak.billsplaning.utils.VersionedEntityUtils;
 
 import java.util.List;
 import java.util.Set;
@@ -50,6 +51,7 @@ public class StandardCategoriesCreation {
         return categories.stream()
                 .filter(categoryName -> !existingStandardCategoryNames.contains(categoryName))
                 .map(categoryName -> Category.of(MASTER_USER, categoryName, Category.Type.STANDARD))
+                .map(VersionedEntityUtils::setMetadata)
                 .collect(Collectors.toSet());
     }
 

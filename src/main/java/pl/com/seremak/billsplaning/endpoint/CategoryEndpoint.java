@@ -27,7 +27,6 @@ import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 public class CategoryEndpoint {
 
     public static final String CATEGORY_URI_PATTERN = "/categories/%s";
-    public static final String JWT_TOKEN_VALIDATION_ERROR_MSG = "Username validation failed. Jwt token not match.";
     private final CategoryService categoryService;
     private final JwtExtractionHelper jwtExtractionHelper;
 
@@ -35,9 +34,9 @@ public class CategoryEndpoint {
     public Mono<ResponseEntity<String>> createCategory(final JwtAuthenticationToken principal, @Valid @RequestBody final CategoryDto categoryDto) {
         final String username = jwtExtractionHelper.extractUsername(principal);
         log.info("Category creation request received: {}", categoryDto.getName());
-        return categoryService.createCategory(username, categoryDto.getName())
+        return categoryService.createCustomCategory(username, categoryDto.getName())
+                .doOnSuccess(category -> log.info("Category with name={} and username={} successfully created for", category.getName(), category.getUsername()))
                 .map(Category::getName)
-                .doOnSuccess(createdCategoryName -> log.info("Category with name={} successfully created", createdCategoryName))
                 .map(createdCategoryName -> EndpointUtils.createResponse(CATEGORY_URI_PATTERN, createdCategoryName));
     }
 
@@ -46,7 +45,6 @@ public class CategoryEndpoint {
         final String username = jwtExtractionHelper.extractUsername(principal);
         log.info("Finding categories for user with name={}", username);
         return categoryService.getAllCategories(username)
-                .collectList()
                 .doOnSuccess(categories -> log.info("{} categories for username={} found.", categories.size(), username))
                 .map(ResponseEntity::ok);
     }
