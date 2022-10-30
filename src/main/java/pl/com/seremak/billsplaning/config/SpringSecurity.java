@@ -19,7 +19,7 @@ import java.util.List;
 @EnableWebFluxSecurity
 public class SpringSecurity {
 
-    @Value("${simpleBillsGuiAppUrl}")
+    @Value("${custom-properties.simpleBillsGuiAppUrl}")
     private String simpleBillsGuiApp;
 
     @Bean

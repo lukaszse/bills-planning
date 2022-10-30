@@ -19,4 +19,16 @@ server:
     include-stacktrace: never
   port: 8081
 
-simpleBillsGuiAppUrl: "http://localhost:8089"
+custom-properties:
+  simpleBillsGuiAppUrl: "http://localhost:8089"
+  categories:
+    - food
+    - travel
+    - education
+    - fun
+    - utility
+    - health
+    - insurance
+    - car
+    - public transport
+    - sport
