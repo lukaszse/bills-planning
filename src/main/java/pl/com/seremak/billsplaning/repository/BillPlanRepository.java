@@ -12,6 +12,6 @@ public interface BillPlanRepository extends ReactiveCrudRepository<BillPlan, Str
     Flux<BillPlan> getBillPlanByUsername(final String username);
 
     Flux<BillPlan> getBillPlanByUsernameAndCategoryName(final String username, final String categoryName);
-    
+
     Mono<BillPlan> deleteBillPlanByUsernameAndCategoryName(final String username, final String categoryName);
 }

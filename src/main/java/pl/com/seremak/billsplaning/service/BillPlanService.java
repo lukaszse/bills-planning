@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import pl.com.seremak.billsplaning.exceptions.ConflictException;
 import pl.com.seremak.billsplaning.model.BillPlan;
 import pl.com.seremak.billsplaning.repository.BillPlanRepository;
+import pl.com.seremak.billsplaning.repository.BillPlanSearchRepository;
 import pl.com.seremak.billsplaning.utils.VersionedEntityUtils;
 import reactor.core.publisher.Mono;
 
@@ -16,6 +17,7 @@ public class BillPlanService {
 
     public static final String BILL_PLAN_ALREADY_EXISTS = "Bill plan with username=%s and categoryName=%s already exists.";
     private final BillPlanRepository billPlanRepository;
+    private final BillPlanSearchRepository billPlanSearchRepository;
 
     public Mono<BillPlan> createBillPlan(final BillPlan billPlan) {
         return billPlanRepository.getBillPlanByUsernameAndCategoryName(billPlan.getUsername(), billPlan.getCategoryName())
@@ -34,6 +36,10 @@ public class BillPlanService {
     public Mono<List<BillPlan>> getAllBillPlans(final String username) {
         return billPlanRepository.getBillPlanByUsername(username)
                 .collectList();
+    }
+
+    public Mono<BillPlan> update(final BillPlan billPlan) {
+        return billPlanSearchRepository.updateBillPlan(billPlan);
     }
 
     public Mono<BillPlan> deleteBillPlan(final String username, final String categoryName) {

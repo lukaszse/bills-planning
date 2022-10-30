@@ -1,8 +1,8 @@
-/*
 package pl.com.seremak.billsplaning.repository;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -13,21 +13,27 @@ import reactor.core.publisher.Mono;
 
 import java.util.Map;
 
+import static pl.com.seremak.billsplaning.utils.VersionedEntityUtils.updateMetadata;
+
 @Repository
 @RequiredArgsConstructor
 public class BillPlanSearchRepository {
 
-    private final ReactiveMongoTemplate reactiveMongoTemplate;
+    private final ReactiveMongoTemplate mongoTemplate;
     private final ObjectMapper objectMapper;
 
-    private Mono<BillPlan> updateBillPlan(final String username, final String categoryName) {
-
+    public Mono<BillPlan> updateBillPlan(final BillPlan billPlan) {
+        return mongoTemplate.findAndModify(
+                prepareFindBillQuery(billPlan.getUsername(), billPlan.getCategoryName()),
+                preparePartialUpdateQuery(billPlan),
+                new FindAndModifyOptions().returnNew(true),
+                BillPlan.class);
     }
 
     private static Query prepareFindBillQuery(final String username, final String categoryName) {
         return new Query()
-                .addCriteria(Criteria.where(USER_FIELD).is(user))
-                .addCriteria(Criteria.where(BILL_NUMBER_FIELD).is(billNumber));
+                .addCriteria(Criteria.where("username").is(username))
+                .addCriteria(Criteria.where("categoryName").is(categoryName));
     }
 
     @SuppressWarnings({"unchecked"})
@@ -40,4 +46,3 @@ public class BillPlanSearchRepository {
         return updateMetadata(update);
     }
 }
-*/
