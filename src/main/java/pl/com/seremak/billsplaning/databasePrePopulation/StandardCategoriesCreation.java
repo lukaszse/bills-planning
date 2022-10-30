@@ -15,13 +15,13 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static pl.com.seremak.billsplaning.utils.BillPlanConstants.MASTER_USER;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
 @ConfigurationProperties(prefix = "custom-properties")
 public class StandardCategoriesCreation {
-
-    private static final String MASTER_USER = "master_user";
 
     private final CategoryRepository categoryRepository;
 

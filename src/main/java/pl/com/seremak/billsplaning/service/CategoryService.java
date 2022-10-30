@@ -7,9 +7,12 @@ import pl.com.seremak.billsplaning.model.Category;
 import pl.com.seremak.billsplaning.repository.CategoryRepository;
 import pl.com.seremak.billsplaning.utils.CollectionUtils;
 import pl.com.seremak.billsplaning.utils.VersionedEntityUtils;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+
+import static pl.com.seremak.billsplaning.utils.BillPlanConstants.MASTER_USER;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +33,10 @@ public class CategoryService {
     }
 
     public Mono<List<Category>> getAllCategories(final String username) {
-        return categoryRepository.getCategoriesByUsername(username)
+        final Flux<Category> standardCategories = categoryRepository.getCategoriesByUsername(MASTER_USER);
+        final Flux<Category> userCategories = categoryRepository.getCategoriesByUsername(username);
+        return standardCategories
+                .concatWith(userCategories)
                 .collectList();
     }
 
