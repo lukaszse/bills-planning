@@ -21,15 +21,17 @@ public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final CategorySearchRepository categorySearchRepository;
 
-    public Mono<Category> createCustomCategory(final String username, final String categoryName) {
-        return categoryRepository.findCategoriesByUsernameAndName(username, categoryName)
+    public Mono<Category> createCustomCategory(final String username, final CategoryDto categoryDto) {
+        return categoryRepository.findCategoriesByUsernameAndName(username, categoryDto.getName())
                 .collectList()
                 .mapNotNull(existingCategoryList ->
-                        existingCategoryList.isEmpty() ? Category.of(username, categoryName, Category.Type.CUSTOM) : null)
+                        existingCategoryList.isEmpty() ?
+                                Category.of(username, categoryDto.getName(), categoryDto.getLimit(), Category.Type.CUSTOM) :
+                                null)
                 .map(VersionedEntityUtils::setMetadata)
                 .map(categoryRepository::save)
                 .flatMap(mono -> mono)
-                .switchIfEmpty(Mono.error(new ConflictException(CATEGORY_ALREADY_EXISTS_ERROR_MSG.formatted(username, categoryName))));
+                .switchIfEmpty(Mono.error(new ConflictException(CATEGORY_ALREADY_EXISTS_ERROR_MSG.formatted(username, categoryDto.getName()))));
     }
 
     public Mono<List<Category>> findAllCategories(final String username) {

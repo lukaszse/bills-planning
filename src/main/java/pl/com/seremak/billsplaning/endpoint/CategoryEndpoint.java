@@ -34,7 +34,7 @@ public class CategoryEndpoint {
     public Mono<ResponseEntity<String>> createCategory(final JwtAuthenticationToken principal, @Valid @RequestBody final CategoryDto categoryDto) {
         final String username = jwtExtractionHelper.extractUsername(principal);
         log.info("Category creation request for username={} and categoryName={}", username, categoryDto.getName());
-        return categoryService.createCustomCategory(username, categoryDto.getName())
+        return categoryService.createCustomCategory(username, categoryDto)
                 .doOnSuccess(category -> log.info("Category with name={} and username={} successfully created for", category.getName(), category.getUsername()))
                 .map(Category::getName)
                 .map(createdCategoryName -> EndpointUtils.createResponse(CATEGORY_URI_PATTERN, createdCategoryName));
