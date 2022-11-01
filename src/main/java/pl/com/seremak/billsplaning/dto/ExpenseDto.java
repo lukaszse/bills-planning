@@ -6,7 +6,7 @@ import javax.validation.constraints.NotBlank;
 import java.math.BigDecimal;
 
 @Data
-public class BillPlanDto {
+public class ExpenseDto {
 
     @NotBlank(message = "Name of Category cannot be blank")
     private String categoryName;

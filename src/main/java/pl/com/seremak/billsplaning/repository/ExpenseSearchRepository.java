@@ -8,7 +8,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
-import pl.com.seremak.billsplaning.model.BillPlan;
+import pl.com.seremak.billsplaning.model.Expense;
 import reactor.core.publisher.Mono;
 
 import java.util.Map;
@@ -17,17 +17,17 @@ import static pl.com.seremak.billsplaning.utils.VersionedEntityUtils.updateMetad
 
 @Repository
 @RequiredArgsConstructor
-public class BillPlanSearchRepository {
+public class ExpenseSearchRepository {
 
     private final ReactiveMongoTemplate mongoTemplate;
     private final ObjectMapper objectMapper;
 
-    public Mono<BillPlan> updateBillPlan(final BillPlan billPlan) {
+    public Mono<Expense> updateBillPlan(final Expense expense) {
         return mongoTemplate.findAndModify(
-                prepareFindBillQuery(billPlan.getUsername(), billPlan.getCategoryName()),
-                preparePartialUpdateQuery(billPlan),
+                prepareFindBillQuery(expense.getUsername(), expense.getCategoryName()),
+                preparePartialUpdateQuery(expense),
                 new FindAndModifyOptions().returnNew(true),
-                BillPlan.class);
+                Expense.class);
     }
 
     private static Query prepareFindBillQuery(final String username, final String categoryName) {
@@ -37,9 +37,9 @@ public class BillPlanSearchRepository {
     }
 
     @SuppressWarnings({"unchecked"})
-    private Update preparePartialUpdateQuery(final BillPlan billPlan) {
+    private Update preparePartialUpdateQuery(final Expense expense) {
         final Update update = new Update();
-        final Map<String, Object> fieldsMap = objectMapper.convertValue(billPlan, Map.class);
+        final Map<String, Object> fieldsMap = objectMapper.convertValue(expense, Map.class);
         fieldsMap.entrySet().stream()
                 .filter(field -> field.getValue() != null)
                 .forEach(field -> update.set(field.getKey(), field.getValue()));

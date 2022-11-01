@@ -18,7 +18,7 @@ import java.math.BigDecimal;
 @Document
 @AllArgsConstructor(staticName = "of")
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class BillPlan extends VersionedEntity {
+public class Expense extends VersionedEntity {
 
     @NotNull(message = "Username cannot be blank")
     private String username;
