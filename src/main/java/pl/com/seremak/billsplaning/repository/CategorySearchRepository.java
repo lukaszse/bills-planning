@@ -29,6 +29,6 @@ public class CategorySearchRepository {
     private static Query prepareFindBillQuery(final String username, final String categoryName) {
         return new Query()
                 .addCriteria(Criteria.where("username").is(username))
-                .addCriteria(Criteria.where("categoryName").is(categoryName));
+                .addCriteria(Criteria.where("name").is(categoryName));
     }
 }

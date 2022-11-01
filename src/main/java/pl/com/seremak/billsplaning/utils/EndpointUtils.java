@@ -10,4 +10,9 @@ public class EndpointUtils {
         return ResponseEntity.created(URI.create(String.format(uriPattern, identifier)))
                 .body(identifier);
     }
+
+    public static <T> ResponseEntity<T> createResponse(final String uriPattern, final String identifier, final T body) {
+        return ResponseEntity.created(URI.create(String.format(uriPattern, identifier)))
+                .body(body);
+    }
 }
