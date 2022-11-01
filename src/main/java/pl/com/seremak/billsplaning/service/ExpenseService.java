@@ -44,7 +44,7 @@ public class ExpenseService {
 
     public Mono<Expense> update(final String username, final ExpenseDto expenseDto) {
         final Expense expense = Expense.of(username, expenseDto.getCategoryName(), expenseDto.getAmount());
-        return expenseSearchRepository.updateBillPlan(expense);
+        return expenseSearchRepository.updateExpense(expense);
     }
 
     public Mono<Expense> deleteBillPlan(final String username, final String categoryName) {

@@ -41,21 +41,32 @@ public class CategoryEndpoint {
     }
 
     @GetMapping(produces = APPLICATION_JSON_VALUE)
-    public Mono<ResponseEntity<List<Category>>> getAllCategories(final JwtAuthenticationToken principal) {
+    public Mono<ResponseEntity<List<Category>>> findAllCategories(final JwtAuthenticationToken principal) {
         final String username = jwtExtractionHelper.extractUsername(principal);
         log.info("Finding categories for user with name={}", username);
-        return categoryService.getAllCategories(username)
+        return categoryService.findAllCategories(username)
                 .doOnSuccess(categories -> log.info("{} categories for username={} found.", categories.size(), username))
                 .map(ResponseEntity::ok);
     }
 
     @GetMapping(value = "{categoryName}", produces = APPLICATION_JSON_VALUE)
-    public Mono<ResponseEntity<Category>> getCategoryByName(final JwtAuthenticationToken principal, @PathVariable final String categoryName) {
+    public Mono<ResponseEntity<Category>> findCategoryByName(final JwtAuthenticationToken principal, @PathVariable final String categoryName) {
         final String username = jwtExtractionHelper.extractUsername(principal);
         log.info("Looking for category with name={} and username={}", categoryName, username);
-        return categoryService.getCategory(username, categoryName)
+        return categoryService.findCategory(username, categoryName)
                 .doOnSuccess(category -> log.info("Category with name={} for username={} successfully found.", category.getName(), category.getUsername()))
                 .map(ResponseEntity::ok);
+    }
+
+    @PatchMapping(value = "{name}")
+    private Mono<ResponseEntity<String>> updateCategory(final JwtAuthenticationToken principal,
+                                                        @Valid @RequestBody final CategoryDto categoryDto) {
+        final String username = jwtExtractionHelper.extractUsername(principal);
+        log.info("Updating Category with username={} and categoryName={}", username, categoryDto.getName());
+        return categoryService.updateCategory(username, categoryDto)
+                .doOnSuccess(updatedCategory -> log.info("Category with username={} and categoryName={} updated.", updatedCategory.getUsername(), updatedCategory.getName()))
+                .map(Category::getName)
+                .map(__ -> ResponseEntity.noContent().build());
     }
 
     @DeleteMapping(value = "{categoryName}")

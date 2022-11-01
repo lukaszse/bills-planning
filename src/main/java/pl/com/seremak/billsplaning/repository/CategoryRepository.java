@@ -9,7 +9,9 @@ import reactor.core.publisher.Mono;
 @Repository
 public interface CategoryRepository extends ReactiveCrudRepository<Category, String> {
 
-    Flux<Category> getCategoriesByUsername(final String username);
-    Flux<Category> getCategoriesByUsernameAndName(final String username, final String name);
+    Flux<Category> findCategoriesByUsername(final String username);
+
+    Flux<Category> findCategoriesByUsernameAndName(final String username, final String name);
+
     Mono<Category> deleteCategoryByUsernameAndName(final String username, final String name);
 }

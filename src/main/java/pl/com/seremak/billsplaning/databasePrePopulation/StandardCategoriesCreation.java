@@ -35,7 +35,7 @@ public class StandardCategoriesCreation {
 
     private void createStandardCategoriesIfNotExists() {
         log.info("Looking for missing standard categories...");
-        categoryRepository.getCategoriesByUsername(MASTER_USER)
+        categoryRepository.findCategoriesByUsername(MASTER_USER)
                 .collectList()
                 .map(this::findAllMissingCategories)
                 .flatMapMany(categoryRepository::saveAll)

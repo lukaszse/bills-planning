@@ -6,23 +6,24 @@ import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
-import pl.com.seremak.billsplaning.model.Expense;
+import pl.com.seremak.billsplaning.model.Category;
 import pl.com.seremak.billsplaning.utils.MongoQueryHelper;
 import reactor.core.publisher.Mono;
 
 @Repository
 @RequiredArgsConstructor
-public class ExpenseSearchRepository {
+public class CategorySearchRepository {
 
     private final ReactiveMongoTemplate mongoTemplate;
     private final MongoQueryHelper mongoQueryHelper;
 
-    public Mono<Expense> updateExpense(final Expense expense) {
+
+    public Mono<Category> updateCategory(final Category category) {
         return mongoTemplate.findAndModify(
-                prepareFindBillQuery(expense.getUsername(), expense.getCategoryName()),
-                mongoQueryHelper.preparePartialUpdateQuery(expense),
+                prepareFindBillQuery(category.getUsername(), category.getName()),
+                mongoQueryHelper.preparePartialUpdateQuery(category),
                 new FindAndModifyOptions().returnNew(true),
-                Expense.class);
+                Category.class);
     }
 
     private static Query prepareFindBillQuery(final String username, final String categoryName) {

@@ -7,9 +7,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.FieldType;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import java.math.BigDecimal;
 
 @Getter
 @Setter
@@ -19,6 +22,10 @@ import javax.validation.constraints.NotNull;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Category extends VersionedEntity {
 
+    public enum Type {
+        STANDARD, CUSTOM
+    }
+
     @NotNull(message = "Username cannot be blank")
     private String username;
 
@@ -26,9 +33,21 @@ public class Category extends VersionedEntity {
     private String name;
 
     @Nullable
+    @Field(targetType = FieldType.DECIMAL128)
+    private BigDecimal limit;
+
+    @Nullable
     private Type type;
 
-    public enum Type {
-        STANDARD, CUSTOM
+    public static Category of(final String username, final String name, final Type type) {
+        return of(username, name, null, type);
+    }
+
+    public static Category of(final String username, final String name, final BigDecimal limit) {
+        return of(username, name, limit, Type.CUSTOM);
+    }
+
+    public static Category of(final String username, final String name) {
+        return of(username, name, null, Type.CUSTOM);
     }
 }
