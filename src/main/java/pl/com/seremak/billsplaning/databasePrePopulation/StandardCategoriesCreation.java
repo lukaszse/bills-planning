@@ -7,14 +7,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
-import pl.com.seremak.billsplaning.model.Category;
-import pl.com.seremak.billsplaning.repository.CategoryRepository;
-import pl.com.seremak.billsplaning.utils.VersionedEntityUtils;
+import pl.com.seremak.billsplaning.service.CategoryService;
 
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
+import static pl.com.seremak.billsplaning.service.CategoryService.findAllMissingCategories;
 import static pl.com.seremak.billsplaning.utils.BillPlanConstants.MASTER_USER;
 
 @Slf4j
@@ -23,44 +20,24 @@ import static pl.com.seremak.billsplaning.utils.BillPlanConstants.MASTER_USER;
 @ConfigurationProperties(prefix = "custom-properties")
 public class StandardCategoriesCreation {
 
-    private final CategoryRepository categoryRepository;
+    private final CategoryService categoryService;
 
     @Setter
     private List<String> categories;
 
     @EventListener
     public void onApplicationEvent(final ContextRefreshedEvent event) {
-        createStandardCategoriesIfNotExists();
+        createStandardCategoriesForMasterUserIfNotExists();
     }
 
-    private void createStandardCategoriesIfNotExists() {
+    private void createStandardCategoriesForMasterUserIfNotExists() {
         log.info("Looking for missing standard categories...");
-        categoryRepository.findCategoriesByUsername(MASTER_USER)
+        categoryService.findStandardCategoriesForUser(MASTER_USER)
                 .collectList()
-                .map(this::findAllMissingCategories)
-                .flatMapMany(categoryRepository::saveAll)
+                .map(masterUserCategories -> findAllMissingCategories(MASTER_USER, masterUserCategories, categories))
+                .flatMapMany(categoryService::createAllCategories)
                 .collectList()
-                .doOnSuccess(StandardCategoriesCreation::logMissingCategoryAddingSummary)
+                .doOnSuccess(CategoryService::logMissingCategoryAddingSummary)
                 .block();
-    }
-
-    private Set<Category> findAllMissingCategories(final List<Category> standardCategories) {
-        final Set<String> existingStandardCategoryNames = standardCategories.stream()
-                .map(Category::getName)
-                .collect(Collectors.toSet());
-        return categories.stream()
-                .filter(categoryName -> !existingStandardCategoryNames.contains(categoryName))
-                .map(categoryName -> Category.of(MASTER_USER, categoryName, Category.Type.STANDARD))
-                .map(VersionedEntityUtils::setMetadata)
-                .collect(Collectors.toSet());
-    }
-
-    private static void logMissingCategoryAddingSummary(final List<Category> addedCategories) {
-        if (addedCategories.isEmpty()) {
-            log.info("No missing categories found");
-
-        } else {
-            log.info("{} missing categories added: {}", addedCategories.size(), addedCategories);
-        }
     }
 }

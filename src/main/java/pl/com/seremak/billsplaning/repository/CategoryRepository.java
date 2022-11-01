@@ -13,5 +13,7 @@ public interface CategoryRepository extends ReactiveCrudRepository<Category, Str
 
     Flux<Category> findCategoriesByUsernameAndName(final String username, final String name);
 
+    Flux<Category> findCategoriesByUsernameAndType(final String username, final Category.Type type);
+
     Mono<Category> deleteCategoryByUsernameAndName(final String username, final String name);
 }

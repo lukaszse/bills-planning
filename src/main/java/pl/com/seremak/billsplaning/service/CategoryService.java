@@ -1,6 +1,7 @@
 package pl.com.seremak.billsplaning.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import pl.com.seremak.billsplaning.dto.CategoryDto;
 import pl.com.seremak.billsplaning.exceptions.ConflictException;
@@ -9,10 +10,16 @@ import pl.com.seremak.billsplaning.repository.CategoryRepository;
 import pl.com.seremak.billsplaning.repository.CategorySearchRepository;
 import pl.com.seremak.billsplaning.utils.CollectionUtils;
 import pl.com.seremak.billsplaning.utils.VersionedEntityUtils;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import static pl.com.seremak.billsplaning.utils.BillPlanConstants.MASTER_USER;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CategoryService {
@@ -34,6 +41,10 @@ public class CategoryService {
                 .switchIfEmpty(Mono.error(new ConflictException(CATEGORY_ALREADY_EXISTS_ERROR_MSG.formatted(username, categoryDto.getName()))));
     }
 
+    public Flux<Category> createAllCategories(final Set<Category> categories) {
+        return categoryRepository.saveAll(categories);
+    }
+
     public Mono<List<Category>> findAllCategories(final String username) {
         return categoryRepository.findCategoriesByUsername(username)
                 .collectList();
@@ -52,5 +63,54 @@ public class CategoryService {
 
     public Mono<Category> deleteCategory(final String username, final String categoryName) {
         return categoryRepository.deleteCategoryByUsernameAndName(username, categoryName);
+    }
+
+    public void createStandardCategoriesForUserIfNotExists(final String username) {
+        log.info("Looking for missing standard categories...");
+        findStandardCategoriesForUser(username)
+                .collectList()
+                .flatMap(userStandardCategories -> findStandardCategoriesForUser(MASTER_USER)
+                        .collectList()
+                        .map(masterUserStandardCategories -> masterUserStandardCategories.stream()
+                                .map(Category::getName)
+                                .collect(Collectors.toList()))
+                        .map(masterUserStandardCategories -> findAllMissingCategories(username, userStandardCategories, masterUserStandardCategories)))
+                .flatMapMany(categoryRepository::saveAll)
+                .collectList()
+                .doOnSuccess(CategoryService::logMissingCategoryAddingSummary)
+                .block();
+    }
+
+    public Flux<Category> findStandardCategoriesForUser(final String username) {
+        return categoryRepository.findCategoriesByUsernameAndType(username, Category.Type.STANDARD);
+    }
+
+    public static Set<Category> findAllMissingCategories(final String username,
+                                                         final List<Category> userStandardCategories,
+                                                         final List<String> standardCategoryNames) {
+        final Set<String> existingStandardCategoryNamesForUser = extractExistingStandardCategoryNamesForUser(userStandardCategories);
+        return standardCategoryNames.stream()
+                .filter(categoryName -> !existingStandardCategoryNamesForUser.contains(categoryName))
+                .map(categoryName -> Category.of(username, categoryName, Category.Type.STANDARD))
+                .map(VersionedEntityUtils::setMetadata)
+                .collect(Collectors.toSet());
+    }
+
+    private static Set<String> extractExistingStandardCategoryNamesForUser(final List<Category> userStandardCategories) {
+        return userStandardCategories.stream()
+                .map(Category::getName)
+                .collect(Collectors.toSet());
+    }
+
+    public static void logMissingCategoryAddingSummary(final List<Category> addedCategories) {
+        final String addedCategoryNames = addedCategories.stream()
+                .map(Category::getName)
+                .collect(Collectors.joining(", "));
+        if (addedCategories.isEmpty()) {
+            log.info("No missing categories found");
+
+        } else {
+            log.info("{} missing categories added: {}", addedCategories.size(), addedCategoryNames);
+        }
     }
 }
