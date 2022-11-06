@@ -1,10 +1,13 @@
 package pl.com.seremak.billsplaning.service;
 
+import com.mongodb.lang.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import pl.com.seremak.billsplaning.dto.CategoryDto;
 import pl.com.seremak.billsplaning.exceptions.ConflictException;
+import pl.com.seremak.billsplaning.messageQueue.MessagePublisher;
+import pl.com.seremak.billsplaning.messageQueue.queueDto.CategoryDeletionMessage;
 import pl.com.seremak.billsplaning.model.Category;
 import pl.com.seremak.billsplaning.repository.CategoryRepository;
 import pl.com.seremak.billsplaning.repository.CategorySearchRepository;
@@ -14,6 +17,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -25,8 +29,11 @@ import static pl.com.seremak.billsplaning.utils.BillPlanConstants.MASTER_USER;
 public class CategoryService {
 
     public static final String CATEGORY_ALREADY_EXISTS_ERROR_MSG = "Category with name %s for user with name %s already exists";
+    public static final String UNDEFINED = "undefined";
     private final CategoryRepository categoryRepository;
     private final CategorySearchRepository categorySearchRepository;
+
+    private final MessagePublisher messagePublisher;
 
     public Mono<Category> createCustomCategory(final String username, final CategoryDto categoryDto) {
         return categoryRepository.findCategoriesByUsernameAndName(username, categoryDto.getName())
@@ -61,8 +68,15 @@ public class CategoryService {
         return categorySearchRepository.updateCategory(categoryToUpdate);
     }
 
-    public Mono<Category> deleteCategory(final String username, final String categoryName) {
-        return categoryRepository.deleteCategoryByUsernameAndName(username, categoryName);
+    public Mono<Category> deleteCategory(final String username,
+                                         final String categoryName,
+                                         @Nullable final String incomingReplacementCategory) {
+        return Optional.ofNullable(incomingReplacementCategory)
+                .map(Mono::just)
+                .orElseGet(() -> findOrCreateUndefinedCategory(username))
+                .doOnNext(replacementCategoryName ->
+                        messagePublisher.sentCategoryDeletionMessage(CategoryDeletionMessage.of(username, categoryName, replacementCategoryName)))
+                .flatMap(__ -> categoryRepository.deleteCategoryByUsernameAndName(username, categoryName));
     }
 
     public void createStandardCategoriesForUserIfNotExists(final String username) {
@@ -96,12 +110,6 @@ public class CategoryService {
                 .collect(Collectors.toSet());
     }
 
-    private static Set<String> extractExistingStandardCategoryNamesForUser(final List<Category> userStandardCategories) {
-        return userStandardCategories.stream()
-                .map(Category::getName)
-                .collect(Collectors.toSet());
-    }
-
     public static void logMissingCategoryAddingSummary(final List<Category> addedCategories) {
         final String addedCategoryNames = addedCategories.stream()
                 .map(Category::getName)
@@ -112,5 +120,18 @@ public class CategoryService {
         } else {
             log.info("{} missing categories added: {}", addedCategories.size(), addedCategoryNames);
         }
+    }
+
+    private static Set<String> extractExistingStandardCategoryNamesForUser(final List<Category> userStandardCategories) {
+        return userStandardCategories.stream()
+                .map(Category::getName)
+                .collect(Collectors.toSet());
+    }
+
+    private Mono<String> findOrCreateUndefinedCategory(final String username) {
+        return findCategory(username, UNDEFINED)
+                .map(Category::getName)
+                .switchIfEmpty(createCustomCategory(username, CategoryDto.of(UNDEFINED, null))
+                        .map(Category::getName));
     }
 }

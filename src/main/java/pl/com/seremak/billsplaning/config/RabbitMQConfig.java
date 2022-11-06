@@ -18,6 +18,7 @@ import org.springframework.context.annotation.Configuration;
 public class RabbitMQConfig {
 
     public static final String USER_CREATION_QUEUE = "userCreation";
+    public static final String CATEGORY_DELETION_QUEUE = "categoryDeletionQueue";
     private final CachingConnectionFactory cachingConnectionFactory;
 
 
@@ -38,5 +39,10 @@ public class RabbitMQConfig {
     @Bean
     public Queue userCreationQueue() {
         return new Queue(USER_CREATION_QUEUE, false);
+    }
+
+    @Bean
+    public Queue categoryDeletionQueue() {
+        return new Queue(CATEGORY_DELETION_QUEUE, false);
     }
 }

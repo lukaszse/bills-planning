@@ -1,6 +1,7 @@
 package pl.com.seremak.billsplaning.endpoint;
 
 
+import com.mongodb.lang.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -68,12 +69,14 @@ public class CategoryEndpoint {
                 .map(ResponseEntity::ok);
     }
 
-    @DeleteMapping(value = "{categoryName}")
-    private Mono<ResponseEntity<String>> deleteCategoryName(final JwtAuthenticationToken principal, @PathVariable final String categoryName) {
+    @DeleteMapping(value = "{category}")
+    private Mono<ResponseEntity<String>> deleteCategoryName(final JwtAuthenticationToken principal,
+                                                            @PathVariable final String category,
+                                                            @RequestParam @Nullable final String replacementCategory) {
         final String username = jwtExtractionHelper.extractUsername(principal);
-        log.info("Deleting category with name={} and username={}", categoryName, username);
-        return categoryService.deleteCategory(username, categoryName)
-                .doOnSuccess(category -> log.info("Category with name={} and username={} deleted.", category.getName(), category.getUsername()))
+        log.info("Deleting category with name={} and username={}", category, username);
+        return categoryService.deleteCategory(username, category, replacementCategory)
+                .doOnSuccess(deletedCategory -> log.info("Category with name={} and username={} deleted.", deletedCategory.getName(), deletedCategory.getUsername()))
                 .map(Category::getName)
                 .map(__ -> ResponseEntity.noContent().build());
     }

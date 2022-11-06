@@ -10,7 +10,7 @@ import pl.com.seremak.billsplaning.service.CategoryService;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class MessageQueueListener {
+public class MessageListener {
 
     public static final String USER_CREATION_QUEUE = "userCreation";
     private final CategoryService categoryService;
