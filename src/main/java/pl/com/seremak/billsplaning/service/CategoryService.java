@@ -17,11 +17,12 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.apache.commons.lang3.ObjectUtils.defaultIfNull;
 import static pl.com.seremak.billsplaning.utils.BillPlanConstants.MASTER_USER;
+import static pl.com.seremak.billsplaning.utils.CollectionUtils.getSoleElementOrThrowException;
 
 @Slf4j
 @Service
@@ -71,12 +72,12 @@ public class CategoryService {
     public Mono<Category> deleteCategory(final String username,
                                          final String categoryName,
                                          @Nullable final String incomingReplacementCategory) {
-        return Optional.ofNullable(incomingReplacementCategory)
-                .map(Mono::just)
-                .orElseGet(() -> findOrCreateUndefinedCategory(username))
-                .doOnNext(replacementCategoryName ->
-                        messagePublisher.sentCategoryDeletionMessage(CategoryDeletionMessage.of(username, categoryName, replacementCategoryName)))
-                .flatMap(__ -> categoryRepository.deleteCategoryByUsernameAndName(username, categoryName));
+        final String replacementCategoryName = defaultIfNull(incomingReplacementCategory, UNDEFINED);
+        return findOrCreateUndefinedCategory(username, replacementCategoryName)
+                .doOnNext(existingReplacementCategoryName ->
+                        messagePublisher.sentCategoryDeletionMessage(CategoryDeletionMessage.of(username, categoryName, existingReplacementCategoryName)))
+                .flatMap(__ -> categoryRepository.deleteCategoryByUsernameAndName(username, categoryName))
+                .doOnNext(category -> log.info("category with username={} and name={} has been created.", username, categoryName));
     }
 
     public void createStandardCategoriesForUserIfNotExists(final String username) {
@@ -128,10 +129,15 @@ public class CategoryService {
                 .collect(Collectors.toSet());
     }
 
-    private Mono<String> findOrCreateUndefinedCategory(final String username) {
-        return findCategory(username, UNDEFINED)
+    private Mono<String> findOrCreateUndefinedCategory(final String username, final String categoryName) {
+        log.info("No replacement category provided. An undefined category will be find or created if not exist already.");
+        return categoryRepository.findCategoriesByUsernameAndName(username, categoryName)
+                .collectList()
+                .mapNotNull(existingCategoryList -> getSoleElementOrThrowException(existingCategoryList, false))
                 .map(Category::getName)
+                .doOnNext(existingCategoryName -> log.info("Category with name={} found in database.", existingCategoryName))
                 .switchIfEmpty(createCustomCategory(username, CategoryDto.of(UNDEFINED, null))
-                        .map(Category::getName));
+                        .map(Category::getName)
+                        .doOnNext(createdCategoryName -> log.info("New category with name={} created.", createdCategoryName)));
     }
 }

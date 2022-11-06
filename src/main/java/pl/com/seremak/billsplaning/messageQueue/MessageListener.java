@@ -7,12 +7,13 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 import pl.com.seremak.billsplaning.service.CategoryService;
 
+import static pl.com.seremak.billsplaning.config.RabbitMQConfig.USER_CREATION_QUEUE;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class MessageListener {
 
-    public static final String USER_CREATION_QUEUE = "userCreation";
     private final CategoryService categoryService;
 
 
