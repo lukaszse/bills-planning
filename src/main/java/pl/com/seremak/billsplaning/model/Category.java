@@ -1,6 +1,5 @@
 package pl.com.seremak.billsplaning.model;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.mongodb.lang.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -19,7 +18,6 @@ import java.math.BigDecimal;
 @Document
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Category extends VersionedEntity {
 
     public enum Type {
