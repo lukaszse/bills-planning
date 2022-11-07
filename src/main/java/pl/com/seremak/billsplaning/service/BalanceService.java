@@ -8,6 +8,7 @@ import pl.com.seremak.billsplaning.dto.TransactionDto;
 import pl.com.seremak.billsplaning.exceptions.NotFoundException;
 import pl.com.seremak.billsplaning.model.Balance;
 import pl.com.seremak.billsplaning.repository.BalanceRepository;
+import pl.com.seremak.billsplaning.utils.BalanceUtils;
 import pl.com.seremak.billsplaning.utils.VersionedEntityUtils;
 import reactor.core.publisher.Mono;
 
@@ -25,12 +26,12 @@ public class BalanceService {
                 .switchIfEmpty(Mono.error(new NotFoundException()));
     }
 
-    public Mono<Balance> updateBalance(final String username, final TransactionDto transactionDto) {
-        return balanceRepository.findBalanceByUsername(username)
-                .defaultIfEmpty(createNewBalanceForUser(username))
+    public Mono<Balance> updateBalance(final TransactionDto transactionDto) {
+        return balanceRepository.findBalanceByUsername(transactionDto.getUsername())
+                .defaultIfEmpty(createNewBalanceForUser(transactionDto.getUsername()))
                 .map(existingBalance -> updateBalance(existingBalance, transactionDto))
                 .flatMap(balanceRepository::save)
-                .doOnSuccess(updatedBalance -> log.info("Balance for username={} has been updated", username));
+                .doOnSuccess(updatedBalance -> log.info("Balance for username={} has been updated", transactionDto.getAmount()));
     }
 
     private static Balance createNewBalanceForUser(final String username) {
@@ -38,12 +39,8 @@ public class BalanceService {
     }
 
     private static Balance updateBalance(final Balance balance, final TransactionDto transactionDto) {
-        final BigDecimal balanceAmount = balance.getBalance();
-        switch (transactionDto.getType()) {
-            case CREATION -> balance.setBalance(balanceAmount.add(transactionDto.getAmount().abs()));
-            case DELETION -> balance.setBalance(balanceAmount.subtract(transactionDto.getAmount().abs()));
-            case UPDATE -> balance.setBalance(balanceAmount.add(transactionDto.getAmount()));
-        }
+        final BigDecimal updatedBalanceAmount = BalanceUtils.updateBalance(balance.getBalance(), transactionDto);
+        balance.setBalance(updatedBalanceAmount);
         return (Balance) VersionedEntityUtils.updateMetadata(balance);
     }
 }

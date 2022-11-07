@@ -32,7 +32,7 @@ public class MessageListener {
     public void receiveBillActionMessage(final Message<TransactionDto> transactionMessage) {
         final TransactionDto transaction = transactionMessage.getPayload();
         log.info("Transaction message received. Username={}", transaction);
-        transactionPostingService.postTransaction(transaction.getUsername(), transaction)
+        transactionPostingService.postTransaction(transaction)
                 .subscribe();
     }
 }

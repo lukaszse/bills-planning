@@ -25,6 +25,7 @@ import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 public class TransactionEndpoint {
 
     public static final String BILL_PLAN_URI_PATTERN = "/billPlans/%s";
+    public static final String EXTRACTING_TOKEN_ERROR_MSG = "Error while extracting token. Reason: %s";
     private final TransactionPostingService transactionPostingService;
     private final JwtExtractionHelper jwtExtractionHelper;
 
@@ -32,8 +33,9 @@ public class TransactionEndpoint {
     public Mono<ResponseEntity<Balance>> postTransaction(final JwtAuthenticationToken principal,
                                                          @Valid @RequestBody final TransactionDto transactionDto) {
         final String username = jwtExtractionHelper.extractUsername(principal);
+        JwtExtractionHelper.validateUsername(username, transactionDto.getUsername());
         log.info("Transaction request for username={} and categoryName={} received.", username, transactionDto.getCategoryName());
-        return transactionPostingService.postTransaction(username, transactionDto)
+        return transactionPostingService.postTransaction(transactionDto)
                 .map(ResponseEntity::ok);
     }
 }

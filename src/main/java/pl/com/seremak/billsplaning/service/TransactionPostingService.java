@@ -13,8 +13,10 @@ import reactor.core.publisher.Mono;
 public class TransactionPostingService {
 
     private final BalanceService balanceService;
+    private final CategoryUsageLimitService categoryUsageLimitService;
 
-    public Mono<Balance> postTransaction(final String username, final TransactionDto transactionDto) {
-        return balanceService.updateBalance(username, transactionDto);
+    public Mono<Balance> postTransaction(final TransactionDto transactionDto) {
+        return categoryUsageLimitService.updateCategoryUsageLimit(transactionDto)
+                .then(balanceService.updateBalance(transactionDto));
     }
 }
