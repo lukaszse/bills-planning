@@ -20,7 +20,7 @@ import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 @Slf4j
 @CrossOrigin
 @RestController
-@RequestMapping("/billPlans")
+@RequestMapping("/transactions")
 @RequiredArgsConstructor
 public class TransactionEndpoint {
 
