@@ -19,7 +19,7 @@ import java.math.BigDecimal;
 @Document
 @NoArgsConstructor
 @AllArgsConstructor
-public class Balance {
+public class Balance extends VersionedEntity {
 
     @Id
     @NotBlank(message = "Balance user cannot be blank")

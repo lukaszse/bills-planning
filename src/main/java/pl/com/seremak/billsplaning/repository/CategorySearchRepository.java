@@ -7,21 +7,21 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
 import pl.com.seremak.billsplaning.model.Category;
-import pl.com.seremak.billsplaning.utils.MongoQueryHelper;
 import reactor.core.publisher.Mono;
+
+import static pl.com.seremak.billsplaning.utils.MongoQueryHelper.preparePartialUpdateQuery;
 
 @Repository
 @RequiredArgsConstructor
 public class CategorySearchRepository {
 
     private final ReactiveMongoTemplate mongoTemplate;
-    private final MongoQueryHelper mongoQueryHelper;
 
 
     public Mono<Category> updateCategory(final Category category) {
         return mongoTemplate.findAndModify(
                 prepareFindBillQuery(category.getUsername(), category.getName()),
-                mongoQueryHelper.preparePartialUpdateQuery(category),
+                preparePartialUpdateQuery(category, Category.class),
                 new FindAndModifyOptions().returnNew(true),
                 Category.class);
     }

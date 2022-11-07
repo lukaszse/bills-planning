@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import pl.com.seremak.billsplaning.dto.TransactionDto;
 import pl.com.seremak.billsplaning.model.Balance;
 import pl.com.seremak.billsplaning.repository.BalanceRepository;
+import pl.com.seremak.billsplaning.utils.VersionedEntityUtils;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
@@ -26,7 +27,7 @@ public class TransactionPostingService {
     }
 
     private static Balance createNewBalanceForUser(final String username) {
-        return new Balance(username, BigDecimal.ZERO);
+        return VersionedEntityUtils.setMetadata(new Balance(username, BigDecimal.ZERO));
     }
 
     private static Balance updateBalance(final Balance balance, final TransactionDto transactionDto) {
@@ -36,6 +37,6 @@ public class TransactionPostingService {
             case DELETION -> balance.setBalance(balanceAmount.subtract(transactionDto.getAmount().abs()));
             case UPDATE -> balance.setBalance(balanceAmount.add(transactionDto.getAmount()));
         }
-        return balance;
+        return (Balance) VersionedEntityUtils.updateMetadata(balance);
     }
 }

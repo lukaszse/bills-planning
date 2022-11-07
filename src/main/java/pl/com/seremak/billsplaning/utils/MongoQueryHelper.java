@@ -1,28 +1,20 @@
 package pl.com.seremak.billsplaning.utils;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.mongodb.core.query.Update;
-import org.springframework.stereotype.Component;
 
-import java.util.Map;
+import java.util.Arrays;
 
+import static java.util.Objects.nonNull;
+import static pl.com.seremak.billsplaning.utils.ReflectionsUtils.getFieldValue;
 import static pl.com.seremak.billsplaning.utils.VersionedEntityUtils.updateMetadata;
 
-@Component
-@RequiredArgsConstructor
 public class MongoQueryHelper {
-
-    private final ObjectMapper objectMapper;
-
-
-    @SuppressWarnings({"unchecked"})
-    public Update preparePartialUpdateQuery(final Object object) {
-        final Update categoryUpdate = new Update();
-        final Map<String, Object> fieldsMap = objectMapper.convertValue(object, Map.class);
-        fieldsMap.entrySet().stream()
-                .filter(field -> field.getValue() != null)
-                .forEach(field -> categoryUpdate.set(field.getKey(), field.getValue()));
-        return updateMetadata(categoryUpdate);
+    
+    public static <T> Update preparePartialUpdateQuery(final Object object, final Class<T> clazz) {
+        final Update update = new Update();
+        Arrays.stream(clazz.getDeclaredFields())
+                .filter(field -> nonNull(getFieldValue(field, object)))
+                .forEach(field -> update.set(field.getName(), getFieldValue(field, object)));
+        return updateMetadata(update);
     }
 }
