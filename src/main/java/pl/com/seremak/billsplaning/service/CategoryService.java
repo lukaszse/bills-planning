@@ -41,7 +41,7 @@ public class CategoryService {
                 .collectList()
                 .mapNotNull(existingCategoryList ->
                         existingCategoryList.isEmpty() ?
-                                Category.of(username, categoryDto.getName(), categoryDto.getLimit(), Category.Type.CUSTOM) :
+                                Category.of(username, categoryDto.getName(), categoryDto.getLimit()) :
                                 null)
                 .map(VersionedEntityUtils::setMetadata)
                 .map(categoryRepository::save)
