@@ -18,7 +18,7 @@ import java.math.BigDecimal;
 @Setter
 @Document
 @NoArgsConstructor
-@AllArgsConstructor(staticName = "of")
+@AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Category extends VersionedEntity {
 
@@ -33,21 +33,24 @@ public class Category extends VersionedEntity {
     private String name;
 
     @Nullable
+    private Type type;
+
+    @Nullable
     @Field(targetType = FieldType.DECIMAL128)
     private BigDecimal limit;
 
-    @Nullable
-    private Type type;
+    private BigDecimal usageOfLimit;
+
 
     public static Category of(final String username, final String name, final Type type) {
-        return of(username, name, null, type);
+        return new Category(username, name, type, null, null);
     }
 
     public static Category of(final String username, final String name, final BigDecimal limit) {
-        return of(username, name, limit, Type.CUSTOM);
+        return new Category(username, name, Type.CUSTOM, limit, null);
     }
 
     public static Category of(final String username, final String name) {
-        return of(username, name, null, Type.CUSTOM);
+        return new Category(username, name, Type.CUSTOM, null, null);
     }
 }
