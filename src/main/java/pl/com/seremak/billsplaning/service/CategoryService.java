@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import pl.com.seremak.billsplaning.dto.CategoryDto;
 import pl.com.seremak.billsplaning.exceptions.ConflictException;
 import pl.com.seremak.billsplaning.messageQueue.MessagePublisher;
-import pl.com.seremak.billsplaning.messageQueue.queueDto.CategoryDeletionMessage;
+import pl.com.seremak.billsplaning.messageQueue.queueDto.CategoryDeletionDto;
 import pl.com.seremak.billsplaning.model.Category;
 import pl.com.seremak.billsplaning.repository.CategoryRepository;
 import pl.com.seremak.billsplaning.repository.CategorySearchRepository;
@@ -75,7 +75,7 @@ public class CategoryService {
         final String replacementCategoryName = defaultIfNull(incomingReplacementCategory, UNDEFINED);
         return findOrCreateUndefinedCategory(username, replacementCategoryName)
                 .doOnNext(existingReplacementCategoryName ->
-                        messagePublisher.sentCategoryDeletionMessage(CategoryDeletionMessage.of(username, categoryName, existingReplacementCategoryName)))
+                        messagePublisher.sentCategoryDeletionMessage(CategoryDeletionDto.of(username, categoryName, existingReplacementCategoryName)))
                 .flatMap(__ -> categoryRepository.deleteCategoryByUsernameAndName(username, categoryName))
                 .doOnNext(category -> log.info("category with username={} and name={} has been created.", username, categoryName));
     }

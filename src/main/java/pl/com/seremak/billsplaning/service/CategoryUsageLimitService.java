@@ -14,6 +14,8 @@ import reactor.core.publisher.Mono;
 import java.math.BigDecimal;
 import java.time.YearMonth;
 
+import static pl.com.seremak.billsplaning.converter.CategoryUsageLimitConverter.categoryUsageLimitOf;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -27,21 +29,11 @@ public class CategoryUsageLimitService {
         return categoryUsageLimitRepository.findByUsernameAndCategoryNameAndYearMonth(transactionDto.getUsername(),
                         transactionDto.getCategoryName(), YearMonth.now())
                 .switchIfEmpty(getCategoryLimit(transactionDto.getUsername(), transactionDto.getCategoryName())
-                        .map(categoryLimit -> CategoryUsageLimitOf(transactionDto, categoryLimit)))
+                        .map(categoryLimit -> categoryUsageLimitOf(transactionDto, categoryLimit)))
                 .map(categoryUsageLimit -> updateCategoryUsageLimit(categoryUsageLimit, transactionDto))
                 .flatMap(categoryUsageLimitSearchRepository::updateCategoryUsageLimit)
                 .doOnSuccess(updatedCategoryUsageLimit ->
                         log.info("Usage limit for category={} updated.", updatedCategoryUsageLimit.getCategoryName()));
-    }
-
-    private static CategoryUsageLimit CategoryUsageLimitOf(final TransactionDto transactionDto, final BigDecimal categoryLimit) {
-        return CategoryUsageLimit.builder()
-                .username(transactionDto.getUsername())
-                .categoryName(transactionDto.getCategoryName())
-                .limit(categoryLimit)
-                .usage(BigDecimal.ZERO)
-                .yearMonth(YearMonth.now())
-                .build();
     }
 
     private static CategoryUsageLimit updateCategoryUsageLimit(final CategoryUsageLimit categoryUsageLimit,
