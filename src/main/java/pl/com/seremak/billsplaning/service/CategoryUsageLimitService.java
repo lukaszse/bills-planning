@@ -8,13 +8,13 @@ import pl.com.seremak.billsplaning.model.Category;
 import pl.com.seremak.billsplaning.model.CategoryUsageLimit;
 import pl.com.seremak.billsplaning.repository.CategoryUsageLimitRepository;
 import pl.com.seremak.billsplaning.repository.CategoryUsageLimitSearchRepository;
-import pl.com.seremak.billsplaning.utils.BalanceUtils;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
 import java.time.YearMonth;
 
 import static pl.com.seremak.billsplaning.converter.CategoryUsageLimitConverter.categoryUsageLimitOf;
+import static pl.com.seremak.billsplaning.utils.BalanceUtils.updateBalance;
 
 @Slf4j
 @Service
@@ -38,7 +38,7 @@ public class CategoryUsageLimitService {
 
     private static CategoryUsageLimit updateCategoryUsageLimit(final CategoryUsageLimit categoryUsageLimit,
                                                                final TransactionDto transactionDto) {
-        final BigDecimal updatedLimitUsage = BalanceUtils.updateBalance(categoryUsageLimit.getUsage(), transactionDto);
+        final BigDecimal updatedLimitUsage = updateBalance(categoryUsageLimit.getUsage(), transactionDto);
         categoryUsageLimit.setUsage(updatedLimitUsage);
         return categoryUsageLimit;
     }

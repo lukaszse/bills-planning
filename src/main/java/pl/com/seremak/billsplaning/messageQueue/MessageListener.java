@@ -10,7 +10,7 @@ import pl.com.seremak.billsplaning.dto.TransactionDto;
 import pl.com.seremak.billsplaning.service.CategoryService;
 import pl.com.seremak.billsplaning.service.TransactionPostingService;
 
-import static pl.com.seremak.billsplaning.config.RabbitMQConfig.BILL_ACTION_MESSAGE;
+import static pl.com.seremak.billsplaning.config.RabbitMQConfig.TRANSACTION_QUEUE;
 import static pl.com.seremak.billsplaning.config.RabbitMQConfig.USER_CREATION_QUEUE;
 
 @Slf4j
@@ -28,8 +28,8 @@ public class MessageListener {
         categoryService.createStandardCategoriesForUserIfNotExists(username);
     }
 
-    @RabbitListener(queues = BILL_ACTION_MESSAGE)
-    public void receiveBillActionMessage(final Message<TransactionDto> transactionMessage) {
+    @RabbitListener(queues = TRANSACTION_QUEUE)
+    public void receiveTransactionMessage(final Message<TransactionDto> transactionMessage) {
         final TransactionDto transaction = transactionMessage.getPayload();
         log.info("Transaction message received. Username={}", transaction);
         transactionPostingService.postTransaction(transaction)
