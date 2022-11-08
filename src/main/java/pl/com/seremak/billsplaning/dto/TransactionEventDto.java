@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 @Data
-public class TransactionDto implements Serializable {
+public class TransactionEventDto implements Serializable {
 
     @NotBlank(message = "Username cannot be blank")
     private String username;

@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
-import pl.com.seremak.billsplaning.dto.TransactionDto;
+import pl.com.seremak.billsplaning.dto.TransactionEventDto;
 import pl.com.seremak.billsplaning.model.Category;
 import pl.com.seremak.billsplaning.model.CategoryUsageLimit;
 import pl.com.seremak.billsplaning.repository.CategoryUsageLimitRepository;
@@ -41,19 +41,19 @@ public class CategoryUsageLimitService {
                 .map(CategoryUsageLimitService::addTotalUsageLimit);
     }
 
-    public Mono<CategoryUsageLimit> updateCategoryUsageLimit(final TransactionDto transactionDto) {
-        return categoryUsageLimitRepository.findByUsernameAndCategoryNameAndYearMonth(transactionDto.getUsername(),
-                        transactionDto.getCategoryName(), YearMonth.now().toString())
-                .switchIfEmpty(createNewCategoryUsageLimit(transactionDto))
-                .map(categoryUsageLimit -> updateCategoryUsageLimit(categoryUsageLimit, transactionDto))
+    public Mono<CategoryUsageLimit> updateCategoryUsageLimit(final TransactionEventDto transactionEventDto) {
+        return categoryUsageLimitRepository.findByUsernameAndCategoryNameAndYearMonth(transactionEventDto.getUsername(),
+                        transactionEventDto.getCategoryName(), YearMonth.now().toString())
+                .switchIfEmpty(createNewCategoryUsageLimit(transactionEventDto))
+                .map(categoryUsageLimit -> updateCategoryUsageLimit(categoryUsageLimit, transactionEventDto))
                 .flatMap(categoryUsageLimitSearchRepository::updateCategoryUsageLimit)
                 .doOnSuccess(updatedCategoryUsageLimit ->
                         log.info("Usage limit for category={} updated.", updatedCategoryUsageLimit.getCategoryName()));
     }
 
-    private Mono<CategoryUsageLimit> createNewCategoryUsageLimit(final TransactionDto transactionDto) {
-        return getCategoryLimit(transactionDto.getUsername(), transactionDto.getCategoryName())
-                .map(categoryLimit -> categoryUsageLimitOf(transactionDto, categoryLimit))
+    private Mono<CategoryUsageLimit> createNewCategoryUsageLimit(final TransactionEventDto transactionEventDto) {
+        return getCategoryLimit(transactionEventDto.getUsername(), transactionEventDto.getCategoryName())
+                .map(categoryLimit -> categoryUsageLimitOf(transactionEventDto, categoryLimit))
                 .map(VersionedEntityUtils::setMetadata)
                 .flatMap(categoryUsageLimitRepository::save);
     }
@@ -64,8 +64,8 @@ public class CategoryUsageLimitService {
     }
 
     private static CategoryUsageLimit updateCategoryUsageLimit(final CategoryUsageLimit categoryUsageLimit,
-                                                               final TransactionDto transactionDto) {
-        final BigDecimal updatedLimitUsage = updateBalance(categoryUsageLimit.getUsage(), transactionDto);
+                                                               final TransactionEventDto transactionEventDto) {
+        final BigDecimal updatedLimitUsage = updateBalance(categoryUsageLimit.getUsage(), transactionEventDto);
         categoryUsageLimit.setUsage(updatedLimitUsage);
         return categoryUsageLimit;
     }

@@ -1,16 +1,16 @@
 package pl.com.seremak.billsplaning.utils;
 
-import pl.com.seremak.billsplaning.dto.TransactionDto;
+import pl.com.seremak.billsplaning.dto.TransactionEventDto;
 
 import java.math.BigDecimal;
 
 public class TransactionBalanceUtils {
 
-    public static BigDecimal updateBalance(final BigDecimal currentBalance, final TransactionDto transactionDto) {
-        return switch (transactionDto.getType()) {
-            case CREATION -> currentBalance.add(transactionDto.getAmount().abs());
-            case DELETION -> currentBalance.subtract(transactionDto.getAmount().abs());
-            case UPDATE -> currentBalance.add(transactionDto.getAmount());
+    public static BigDecimal updateBalance(final BigDecimal currentBalance, final TransactionEventDto transactionEventDto) {
+        return switch (transactionEventDto.getType()) {
+            case CREATION -> currentBalance.add(transactionEventDto.getAmount().abs());
+            case DELETION -> currentBalance.subtract(transactionEventDto.getAmount().abs());
+            case UPDATE -> currentBalance.add(transactionEventDto.getAmount());
         };
     }
 }
