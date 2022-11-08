@@ -12,9 +12,13 @@ import pl.com.seremak.billsplaning.utils.VersionedEntityUtils;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.YearMonth;
+import java.util.List;
 
+import static org.apache.commons.lang3.ObjectUtils.defaultIfNull;
 import static pl.com.seremak.billsplaning.converter.CategoryUsageLimitConverter.categoryUsageLimitOf;
+import static pl.com.seremak.billsplaning.utils.DateUtils.toYearMonthString;
 import static pl.com.seremak.billsplaning.utils.TransactionBalanceUtils.updateBalance;
 
 @Slf4j
@@ -25,6 +29,13 @@ public class CategoryUsageLimitService {
     private final CategoryUsageLimitRepository categoryUsageLimitRepository;
     private final CategoryUsageLimitSearchRepository categoryUsageLimitSearchRepository;
     private final CategoryService categoryService;
+
+
+    public Mono<List<CategoryUsageLimit>> findAllCategoryUsageLimits(final String username, final String yearMonth) {
+        final String yearMonthToSearch = defaultIfNull(yearMonth, toYearMonthString(Instant.now()).orElseThrow());
+        return categoryUsageLimitRepository.findByUsernameAndYearMonth(username, yearMonthToSearch)
+                .collectList();
+    }
 
     public Mono<CategoryUsageLimit> updateCategoryUsageLimit(final TransactionDto transactionDto) {
         return categoryUsageLimitRepository.findByUsernameAndCategoryNameAndYearMonth(transactionDto.getUsername(),
