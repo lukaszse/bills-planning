@@ -2,9 +2,10 @@ package pl.com.seremak.billsplaning.converter;
 
 import pl.com.seremak.billsplaning.dto.TransactionDto;
 import pl.com.seremak.billsplaning.model.CategoryUsageLimit;
-import pl.com.seremak.billsplaning.utils.DateUtils;
 
 import java.math.BigDecimal;
+
+import static pl.com.seremak.billsplaning.utils.DateUtils.toYearMonthString;
 
 public class CategoryUsageLimitConverter {
 
@@ -14,7 +15,7 @@ public class CategoryUsageLimitConverter {
                 .categoryName(transactionDto.getCategoryName())
                 .limit(categoryLimit)
                 .usage(BigDecimal.ZERO)
-                .yearMonth(DateUtils.toYearMonth(transactionDto.getDate()).orElseThrow())
+                .yearMonth(toYearMonthString(transactionDto.getDate()).orElseThrow())
                 .build();
     }
 }

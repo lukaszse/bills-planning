@@ -10,8 +10,6 @@ import org.springframework.stereotype.Repository;
 import pl.com.seremak.billsplaning.model.CategoryUsageLimit;
 import reactor.core.publisher.Mono;
 
-import java.time.YearMonth;
-
 import static pl.com.seremak.billsplaning.utils.MongoQueryHelper.preparePartialUpdateQuery;
 
 @Repository
@@ -23,17 +21,16 @@ public class CategoryUsageLimitSearchRepository {
 
     public Mono<CategoryUsageLimit> updateCategoryUsageLimit(final CategoryUsageLimit categoryUsageLimit) {
         return mongoTemplate.findAndModify(
-                prepareFindBillQuery(categoryUsageLimit.getUsername(), categoryUsageLimit.getCategoryName(),
-                        categoryUsageLimit.getYearMonth()),
+                prepareFindBillQuery(categoryUsageLimit.getUsername(), categoryUsageLimit.getCategoryName(), categoryUsageLimit.getYearMonth()),
                 preparePartialUpdateQuery(categoryUsageLimit, CategoryUsageLimit.class),
                 new FindAndModifyOptions().returnNew(true),
                 CategoryUsageLimit.class);
     }
 
-    private static Query prepareFindBillQuery(final String username, final String categoryName, final YearMonth yearMonth) {
+    private static Query prepareFindBillQuery(final String username, final String categoryName, final String yearMonth) {
         return new Query()
                 .addCriteria(Criteria.where("username").is(username))
-                .addCriteria(Criteria.where("name").is(categoryName))
+                .addCriteria(Criteria.where("categoryName").is(categoryName))
                 .addCriteria(Criteria.where("yearMonth").is(yearMonth));
     }
 }

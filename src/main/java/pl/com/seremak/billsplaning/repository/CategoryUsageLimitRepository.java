@@ -6,14 +6,12 @@ import pl.com.seremak.billsplaning.model.CategoryUsageLimit;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.time.YearMonth;
-
 @Repository
 public interface CategoryUsageLimitRepository extends ReactiveCrudRepository<CategoryUsageLimit, String> {
 
-    Flux<CategoryUsageLimit> findByUsernameAndYearMonth(final String username, final YearMonth yearMonth);
+    Flux<CategoryUsageLimit> findByUsernameAndYearMonth(final String username, final String yearMonth);
 
     Mono<CategoryUsageLimit> findByUsernameAndCategoryNameAndYearMonth(final String username,
                                                                        final String categoryName,
-                                                                       final YearMonth yearMonth);
+                                                                       final String yearMonth);
 }
