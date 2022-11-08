@@ -80,9 +80,9 @@ public class CategoryService {
                 .doOnNext(category -> log.info("category with username={} and name={} has been created.", username, categoryName));
     }
 
-    public void createStandardCategoriesForUserIfNotExists(final String username) {
+    public Mono<List<Category>> createStandardCategoriesForUserIfNotExists(final String username) {
         log.info("Looking for missing standard categories...");
-        findStandardCategoriesForUser(username)
+        return findStandardCategoriesForUser(username)
                 .collectList()
                 .flatMap(userStandardCategories -> findStandardCategoriesForUser(MASTER_USER)
                         .collectList()
@@ -92,8 +92,7 @@ public class CategoryService {
                         .map(masterUserStandardCategories -> findAllMissingCategories(username, userStandardCategories, masterUserStandardCategories)))
                 .flatMapMany(categoryRepository::saveAll)
                 .collectList()
-                .doOnSuccess(CategoryService::logMissingCategoryAddingSummary)
-                .block();
+                .doOnSuccess(CategoryService::logMissingCategoryAddingSummary);
     }
 
     public Flux<Category> findStandardCategoriesForUser(final String username) {

@@ -28,13 +28,18 @@ public class BalanceService {
 
     public Mono<Balance> updateBalance(final TransactionEventDto transactionEventDto) {
         return balanceRepository.findBalanceByUsername(transactionEventDto.getUsername())
-                .defaultIfEmpty(createNewBalanceForUser(transactionEventDto.getUsername()))
+                .defaultIfEmpty(prepareNewBalanceForUser(transactionEventDto.getUsername()))
                 .map(existingBalance -> updateBalance(existingBalance, transactionEventDto))
                 .flatMap(balanceRepository::save)
                 .doOnSuccess(updatedBalance -> log.info("Balance for username={} has been updated", transactionEventDto.getAmount()));
     }
 
-    private static Balance createNewBalanceForUser(final String username) {
+    public Mono<Balance> createNewClearBalance(final String username) {
+        final Balance newBalance = prepareNewBalanceForUser(username);
+        return balanceRepository.save(newBalance);
+    }
+
+    private static Balance prepareNewBalanceForUser(final String username) {
         return VersionedEntityUtils.setMetadata(new Balance(username, BigDecimal.ZERO));
     }
 
