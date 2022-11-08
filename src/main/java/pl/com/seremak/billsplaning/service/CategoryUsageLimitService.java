@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 import java.time.YearMonth;
 
 import static pl.com.seremak.billsplaning.converter.CategoryUsageLimitConverter.categoryUsageLimitOf;
-import static pl.com.seremak.billsplaning.utils.BalanceUtils.updateBalance;
+import static pl.com.seremak.billsplaning.utils.TransactionBalanceUtils.updateBalance;
 
 @Slf4j
 @Service

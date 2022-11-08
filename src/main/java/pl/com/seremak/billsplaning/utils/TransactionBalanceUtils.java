@@ -4,7 +4,7 @@ import pl.com.seremak.billsplaning.dto.TransactionDto;
 
 import java.math.BigDecimal;
 
-public class BalanceUtils {
+public class TransactionBalanceUtils {
 
     public static BigDecimal updateBalance(final BigDecimal currentBalance, final TransactionDto transactionDto) {
         return switch (transactionDto.getType()) {

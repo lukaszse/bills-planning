@@ -8,7 +8,7 @@ import pl.com.seremak.billsplaning.dto.TransactionDto;
 import pl.com.seremak.billsplaning.exceptions.NotFoundException;
 import pl.com.seremak.billsplaning.model.Balance;
 import pl.com.seremak.billsplaning.repository.BalanceRepository;
-import pl.com.seremak.billsplaning.utils.BalanceUtils;
+import pl.com.seremak.billsplaning.utils.TransactionBalanceUtils;
 import pl.com.seremak.billsplaning.utils.VersionedEntityUtils;
 import reactor.core.publisher.Mono;
 
@@ -39,7 +39,7 @@ public class BalanceService {
     }
 
     private static Balance updateBalance(final Balance balance, final TransactionDto transactionDto) {
-        final BigDecimal updatedBalanceAmount = BalanceUtils.updateBalance(balance.getBalance(), transactionDto);
+        final BigDecimal updatedBalanceAmount = TransactionBalanceUtils.updateBalance(balance.getBalance(), transactionDto);
         balance.setBalance(updatedBalanceAmount);
         return (Balance) VersionedEntityUtils.updateMetadata(balance);
     }
