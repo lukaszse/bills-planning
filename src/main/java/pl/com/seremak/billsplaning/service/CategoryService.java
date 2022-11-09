@@ -21,8 +21,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.ObjectUtils.defaultIfNull;
+import static pl.com.seremak.billsplaning.converter.CategoryConverter.*;
+import static pl.com.seremak.billsplaning.model.Category.TransactionType.EXPENSE;
+import static pl.com.seremak.billsplaning.model.Category.TransactionType.INCOME;
 import static pl.com.seremak.billsplaning.utils.BillPlanConstants.MASTER_USER;
 import static pl.com.seremak.billsplaning.utils.CollectionUtils.getSoleElementOrThrowException;
+import static pl.com.seremak.billsplaning.utils.CollectionUtils.mergeLists;
 
 @Slf4j
 @Service
@@ -40,14 +44,11 @@ public class CategoryService {
     public Mono<Category> createCustomCategory(final String username, final CategoryDto categoryDto) {
         return categoryRepository.findCategoriesByUsernameAndName(username, categoryDto.getName())
                 .collectList()
-                .mapNotNull(existingCategoryList ->
-                        existingCategoryList.isEmpty() ?
-                                Category.of(username, categoryDto.getName(), categoryDto.getLimit()) :
-                                null)
+                .mapNotNull(existingCategoryList -> toCategory(username, categoryDto, existingCategoryList))
                 .map(VersionedEntityUtils::setMetadata)
                 .map(categoryRepository::save)
                 .flatMap(mono -> mono)
-                .map(this::createNewCategoryUsageLimit)
+                .doOnSuccess(this::createNewCategoryUsageLimit)
                 .switchIfEmpty(Mono.error(new ConflictException(CATEGORY_ALREADY_EXISTS_ERROR_MSG.formatted(username, categoryDto.getName()))));
     }
 
@@ -67,20 +68,27 @@ public class CategoryService {
     }
 
     public Mono<Category> updateCategory(final String username, final CategoryDto categoryDto) {
-        final Category categoryToUpdate = Category.of(username, categoryDto.getName(), categoryDto.getLimit());
+        final Category categoryToUpdate = toCategory(username, categoryDto);
         return categorySearchRepository.updateCategory(categoryToUpdate)
-                .map(this::updateCategoryUsageLimit);
+                .doOnSuccess(this::updateCategoryUsageLimit);
     }
 
     public Mono<Category> deleteCategory(final String username,
                                          final String categoryName,
                                          @Nullable final String incomingReplacementCategory) {
+
+
+        return categoryRepository.deleteCategoryByUsernameAndName(username, categoryName)
+                .doOnSuccess(category -> reassignTransactionOfDeletedCategory(category, incomingReplacementCategory));
+    }
+
+    private void reassignTransactionOfDeletedCategory(final Category deletedCategory,
+                                                      @Nullable final String incomingReplacementCategory) {
         final String replacementCategoryName = defaultIfNull(incomingReplacementCategory, UNDEFINED);
-        return findOrCreateUndefinedCategory(username, replacementCategoryName)
-                .doOnNext(existingReplacementCategoryName ->
-                        messagePublisher.sentCategoryDeletionMessage(CategoryDeletionDto.of(username, categoryName, existingReplacementCategoryName)))
-                .flatMap(__ -> categoryRepository.deleteCategoryByUsernameAndName(username, categoryName))
-                .doOnNext(category -> log.info("category with username={} and name={} has been created.", username, categoryName));
+        findOrCreateUndefinedCategory(deletedCategory.getUsername(), replacementCategoryName, deletedCategory.getTransactionType())
+                .doOnNext(existingReplacementCategoryName -> messagePublisher.sentCategoryDeletionMessage(
+                        CategoryDeletionDto.of(deletedCategory.getUsername(), deletedCategory.getName(), existingReplacementCategoryName)))
+                .subscribe();
     }
 
     public Mono<List<Category>> createStandardCategoriesForUserIfNotExists(final String username) {
@@ -89,10 +97,8 @@ public class CategoryService {
                 .collectList()
                 .flatMap(userStandardCategories -> findStandardCategoriesForUser(MASTER_USER)
                         .collectList()
-                        .map(masterUserStandardCategories -> masterUserStandardCategories.stream()
-                                .map(Category::getName)
-                                .collect(Collectors.toList()))
-                        .map(masterUserStandardCategories -> findAllMissingCategories(username, userStandardCategories, masterUserStandardCategories)))
+                        .map(masterUserStandardCategories ->
+                                findAllMissingCategories(username, userStandardCategories, masterUserStandardCategories)))
                 .flatMapMany(categoryRepository::saveAll)
                 .collectList()
                 .doOnSuccess(CategoryService::logMissingCategoryAddingSummary);
@@ -104,12 +110,22 @@ public class CategoryService {
 
     public static Set<Category> findAllMissingCategories(final String username,
                                                          final List<Category> userStandardCategories,
-                                                         final List<String> standardCategoryNames) {
+                                                         final List<String> incomeStandardCategoryNames,
+                                                         final List<String> expenseStandardCategoryNames) {
+        final List<Category> incomeStandardCategories = toCategories(username, incomeStandardCategoryNames, INCOME);
+        final List<Category> expenseStandardCategories = toCategories(username, expenseStandardCategoryNames, EXPENSE);
+        final List<Category> allTypeStandardCategories = mergeLists(incomeStandardCategories, expenseStandardCategories);
+        return findAllMissingCategories(username, userStandardCategories, allTypeStandardCategories);
+    }
+
+
+    private static Set<Category> findAllMissingCategories(final String username,
+                                                          final List<Category> userStandardCategories,
+                                                          final List<Category> masterUserStandardCategories) {
         final Set<String> existingStandardCategoryNamesForUser = extractExistingStandardCategoryNamesForUser(userStandardCategories);
-        return standardCategoryNames.stream()
-                .filter(categoryName -> !existingStandardCategoryNamesForUser.contains(categoryName))
-                .map(categoryName -> Category.of(username, categoryName, Category.Type.STANDARD))
-                .map(VersionedEntityUtils::setMetadata)
+        return masterUserStandardCategories.stream()
+                .filter(masterUserStandardCategory -> !existingStandardCategoryNamesForUser.contains(masterUserStandardCategory.getName()))
+                .map(masterUserCategoryToCopy -> toCategory(username, masterUserCategoryToCopy.getName(), masterUserCategoryToCopy.getTransactionType()))
                 .collect(Collectors.toSet());
     }
 
@@ -125,16 +141,14 @@ public class CategoryService {
         }
     }
 
-    private Category createNewCategoryUsageLimit(final Category category) {
+    private void createNewCategoryUsageLimit(final Category category) {
         categoryUsageLimitService.createNewCategoryUsageLimit(category.getUsername(), category.getName())
                 .subscribe();
-        return category;
     }
 
-    private Category updateCategoryUsageLimit(final Category category) {
+    private void updateCategoryUsageLimit(final Category category) {
         categoryUsageLimitService.updateCategoryUsageLimit(category.getUsername(), category.getName(), category.getLimit())
                 .subscribe();
-        return category;
     }
 
     private static Set<String> extractExistingStandardCategoryNamesForUser(final List<Category> userStandardCategories) {
@@ -143,14 +157,16 @@ public class CategoryService {
                 .collect(Collectors.toSet());
     }
 
-    private Mono<String> findOrCreateUndefinedCategory(final String username, final String categoryName) {
+    private Mono<String> findOrCreateUndefinedCategory(final String username,
+                                                       final String categoryName,
+                                                       final Category.TransactionType transactionType) {
         log.info("No replacement category provided. An undefined category will be find or created if not exist already.");
         return categoryRepository.findCategoriesByUsernameAndName(username, categoryName)
                 .collectList()
                 .mapNotNull(existingCategoryList -> getSoleElementOrThrowException(existingCategoryList, false))
                 .map(Category::getName)
                 .doOnNext(existingCategoryName -> log.info("Category with name={} found in database.", existingCategoryName))
-                .switchIfEmpty(createCustomCategory(username, CategoryDto.of(UNDEFINED, null))
+                .switchIfEmpty(createCustomCategory(username, toCategoryDto(UNDEFINED, transactionType))
                         .map(Category::getName)
                         .doOnNext(createdCategoryName -> log.info("New category with name={} created.", createdCategoryName)));
     }

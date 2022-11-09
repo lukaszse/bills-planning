@@ -4,9 +4,9 @@ import com.mongodb.lang.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import pl.com.seremak.billsplaning.model.Category;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 @Data
@@ -17,10 +17,9 @@ public class CategoryDto {
     @NotBlank(message = "Name of Category cannot be blank")
     private String name;
 
+    @NotNull(message = "Transaction type cannot be null")
+    private String transactionType;
+
     @Nullable
     private BigDecimal limit;
-
-    public static CategoryDto of(final Category category) {
-        return CategoryDto.of(category.getName(), category.getLimit());
-    }
 }

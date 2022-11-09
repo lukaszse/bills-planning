@@ -21,7 +21,7 @@ server:
 
 custom-properties:
   simpleBillsGuiAppUrl: "http://localhost:8089"
-  categories:
+  expense-categories:
     - food
     - travel
     - education
@@ -34,3 +34,5 @@ custom-properties:
     - sport
     - electronics
     - garden
+  income-categories:
+    - salary
