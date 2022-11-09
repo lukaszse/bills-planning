@@ -9,12 +9,14 @@ import pl.com.seremak.billsplaning.exceptions.ConflictException;
 import pl.com.seremak.billsplaning.messageQueue.MessagePublisher;
 import pl.com.seremak.billsplaning.messageQueue.queueDto.CategoryDeletionDto;
 import pl.com.seremak.billsplaning.model.Category;
+import pl.com.seremak.billsplaning.model.CategoryUsageLimit;
 import pl.com.seremak.billsplaning.repository.CategoryRepository;
 import pl.com.seremak.billsplaning.repository.CategorySearchRepository;
 import pl.com.seremak.billsplaning.utils.CollectionUtils;
 import pl.com.seremak.billsplaning.utils.VersionedEntityUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
 
 import java.util.List;
 import java.util.Set;
@@ -32,9 +34,10 @@ public class CategoryService {
     public static final String CATEGORY_ALREADY_EXISTS_ERROR_MSG = "Category with name %s for user with name %s already exists";
     public static final String UNDEFINED = "undefined";
     private final CategoryRepository categoryRepository;
+    private final CategoryUsageLimitService categoryUsageLimitService;
     private final CategorySearchRepository categorySearchRepository;
-
     private final MessagePublisher messagePublisher;
+
 
     public Mono<Category> createCustomCategory(final String username, final CategoryDto categoryDto) {
         return categoryRepository.findCategoriesByUsernameAndName(username, categoryDto.getName())
@@ -66,7 +69,12 @@ public class CategoryService {
 
     public Mono<Category> updateCategory(final String username, final CategoryDto categoryDto) {
         final Category categoryToUpdate = Category.of(username, categoryDto.getName(), categoryDto.getLimit());
-        return categorySearchRepository.updateCategory(categoryToUpdate);
+        final Mono<Category> categoryMono = categorySearchRepository.updateCategory(categoryToUpdate);
+        final Mono<CategoryUsageLimit> categoryUsageLimitMono =
+                categoryUsageLimitService.updateCategoryUsageLimit(username, categoryDto.getName(), categoryDto.getLimit());
+        return categoryMono
+                .zipWith(categoryUsageLimitMono)
+                .map(Tuple2::getT1);
     }
 
     public Mono<Category> deleteCategory(final String username,

@@ -59,7 +59,7 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public Queue billActionQueue() {
+    public Queue transactionQueue() {
         return new Queue(TRANSACTION_QUEUE, false);
     }
 }
