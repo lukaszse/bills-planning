@@ -27,10 +27,13 @@ public class CategoryUsageLimitEndpoint {
     private final JwtExtractionHelper jwtExtractionHelper;
 
     @GetMapping(produces = APPLICATION_JSON_VALUE)
-    public Mono<ResponseEntity<List<CategoryUsageLimit>>> getAllCategoryUsageLimits(final JwtAuthenticationToken principal,
-                                                                                    @Nullable @RequestParam final String yearMonth) {
+    public Mono<ResponseEntity<List<CategoryUsageLimit>>> getAllCategoryUsageLimits(
+            final JwtAuthenticationToken principal,
+            @Nullable @RequestParam final String yearMonth,
+            @RequestParam(value = "total", required = false, defaultValue = "false") final boolean total) {
+
         final String username = jwtExtractionHelper.extractUsername(principal);
-        return categoryUsageLimitService.findAllCategoryUsageLimits(username, yearMonth)
+        return categoryUsageLimitService.findAllCategoryUsageLimits(username, yearMonth, total)
                 .doOnSuccess(categoryUsageLimits -> log.info("A list of {} usage of limits for all categories for username={} found.", categoryUsageLimits.size(), username))
                 .map(ResponseEntity::ok);
     }

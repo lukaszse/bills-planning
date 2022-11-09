@@ -9,7 +9,6 @@ import pl.com.seremak.billsplaning.model.Category;
 import pl.com.seremak.billsplaning.model.CategoryUsageLimit;
 import pl.com.seremak.billsplaning.repository.CategoryUsageLimitRepository;
 import pl.com.seremak.billsplaning.repository.CategoryUsageLimitSearchRepository;
-import pl.com.seremak.billsplaning.utils.ListUtils;
 import pl.com.seremak.billsplaning.utils.VersionedEntityUtils;
 import reactor.core.publisher.Mono;
 
@@ -34,11 +33,14 @@ public class CategoryUsageLimitService {
     private final CategoryService categoryService;
 
 
-    public Mono<List<CategoryUsageLimit>> findAllCategoryUsageLimits(final String username, final String yearMonth) {
+    public Mono<List<CategoryUsageLimit>> findAllCategoryUsageLimits(final String username, final String yearMonth, final boolean total) {
         final String yearMonthToSearch = defaultIfNull(yearMonth, toYearMonthString(Instant.now()).orElseThrow());
-        return categoryUsageLimitRepository.findByUsernameAndYearMonth(username, yearMonthToSearch)
-                .collectList()
-                .map(CategoryUsageLimitService::addTotalUsageLimit);
+        final Mono<List<CategoryUsageLimit>> categoriesUsageLimitsMono =
+                categoryUsageLimitRepository.findByUsernameAndYearMonth(username, yearMonthToSearch)
+                        .collectList();
+        return total ?
+                categoriesUsageLimitsMono.map(CategoryUsageLimitService::extractTotalUsageLimit) :
+                categoriesUsageLimitsMono;
     }
 
     public Mono<CategoryUsageLimit> updateCategoryUsageLimit(final TransactionEventDto transactionEventDto) {
@@ -70,7 +72,7 @@ public class CategoryUsageLimitService {
         return categoryUsageLimit;
     }
 
-    private static List<CategoryUsageLimit> addTotalUsageLimit(final List<CategoryUsageLimit> categoryUsageLimits) {
+    private static List<CategoryUsageLimit> extractTotalUsageLimit(final List<CategoryUsageLimit> categoryUsageLimits) {
         final Optional<Pair<BigDecimal, BigDecimal>> totalUsageAndLimitOpt = categoryUsageLimits.stream()
                 .map(categoryUsageLimit -> Pair.of(categoryUsageLimit.getUsage(), categoryUsageLimit.getLimit()))
                 .reduce((usageAndLimit1, usageAndLimit2) ->
@@ -85,7 +87,7 @@ public class CategoryUsageLimitService {
                                 .yearMonth(category.getYearMonth())
                                 .build()));
         return totalOpt
-                .map(total -> ListUtils.addAndReturn(categoryUsageLimits, total))
-                .orElse(categoryUsageLimits);
+                .map(List::of)
+                .orElse(List.of());
     }
 }
