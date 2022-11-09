@@ -9,14 +9,12 @@ import pl.com.seremak.billsplaning.exceptions.ConflictException;
 import pl.com.seremak.billsplaning.messageQueue.MessagePublisher;
 import pl.com.seremak.billsplaning.messageQueue.queueDto.CategoryDeletionDto;
 import pl.com.seremak.billsplaning.model.Category;
-import pl.com.seremak.billsplaning.model.CategoryUsageLimit;
 import pl.com.seremak.billsplaning.repository.CategoryRepository;
 import pl.com.seremak.billsplaning.repository.CategorySearchRepository;
 import pl.com.seremak.billsplaning.utils.CollectionUtils;
 import pl.com.seremak.billsplaning.utils.VersionedEntityUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2;
 
 import java.util.List;
 import java.util.Set;
@@ -49,6 +47,7 @@ public class CategoryService {
                 .map(VersionedEntityUtils::setMetadata)
                 .map(categoryRepository::save)
                 .flatMap(mono -> mono)
+                .map(this::createNewCategoryUsageLimit)
                 .switchIfEmpty(Mono.error(new ConflictException(CATEGORY_ALREADY_EXISTS_ERROR_MSG.formatted(username, categoryDto.getName()))));
     }
 
@@ -69,12 +68,8 @@ public class CategoryService {
 
     public Mono<Category> updateCategory(final String username, final CategoryDto categoryDto) {
         final Category categoryToUpdate = Category.of(username, categoryDto.getName(), categoryDto.getLimit());
-        final Mono<Category> categoryMono = categorySearchRepository.updateCategory(categoryToUpdate);
-        final Mono<CategoryUsageLimit> categoryUsageLimitMono =
-                categoryUsageLimitService.updateCategoryUsageLimit(username, categoryDto.getName(), categoryDto.getLimit());
-        return categoryMono
-                .zipWith(categoryUsageLimitMono)
-                .map(Tuple2::getT1);
+        return categorySearchRepository.updateCategory(categoryToUpdate)
+                .map(this::updateCategoryUsageLimit);
     }
 
     public Mono<Category> deleteCategory(final String username,
@@ -128,6 +123,18 @@ public class CategoryService {
         } else {
             log.info("{} missing categories added: {}", addedCategories.size(), addedCategoryNames);
         }
+    }
+
+    private Category createNewCategoryUsageLimit(final Category category) {
+        categoryUsageLimitService.createNewCategoryUsageLimit(category.getUsername(), category.getName())
+                .subscribe();
+        return category;
+    }
+
+    private Category updateCategoryUsageLimit(final Category category) {
+        categoryUsageLimitService.updateCategoryUsageLimit(category.getUsername(), category.getName(), category.getLimit())
+                .subscribe();
+        return category;
     }
 
     private static Set<String> extractExistingStandardCategoryNamesForUser(final List<Category> userStandardCategories) {

@@ -65,16 +65,16 @@ public class CategoryUsageLimitService {
                         log.info("Usage limit for category={} updated.", updatedCategoryUsageLimit.getCategoryName()));
     }
 
-    private Mono<CategoryUsageLimit> createNewCategoryUsageLimit(final TransactionEventDto transactionEventDto) {
-        return getCategoryLimit(transactionEventDto.getUsername(), transactionEventDto.getCategoryName())
-                .map(categoryLimit -> categoryUsageLimitOf(transactionEventDto, categoryLimit))
+    public Mono<CategoryUsageLimit> createNewCategoryUsageLimit(final String username, final String categoryName) {
+        return getCategoryLimit(username, categoryName)
+                .map(categoryLimit -> categoryUsageLimitOf(username, categoryName, categoryLimit))
                 .map(VersionedEntityUtils::setMetadata)
                 .flatMap(categoryUsageLimitRepository::save);
     }
 
-    private Mono<CategoryUsageLimit> createNewCategoryUsageLimit(final String username, final String categoryName) {
-        return getCategoryLimit(username, categoryName)
-                .map(categoryLimit -> categoryUsageLimitOf(username, categoryName, categoryLimit))
+    private Mono<CategoryUsageLimit> createNewCategoryUsageLimit(final TransactionEventDto transactionEventDto) {
+        return getCategoryLimit(transactionEventDto.getUsername(), transactionEventDto.getCategoryName())
+                .map(categoryLimit -> categoryUsageLimitOf(transactionEventDto, categoryLimit))
                 .map(VersionedEntityUtils::setMetadata)
                 .flatMap(categoryUsageLimitRepository::save);
     }
