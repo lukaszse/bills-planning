@@ -14,4 +14,6 @@ public interface CategoryUsageLimitRepository extends ReactiveCrudRepository<Cat
     Mono<CategoryUsageLimit> findByUsernameAndCategoryNameAndYearMonth(final String username,
                                                                        final String categoryName,
                                                                        final String yearMonth);
+
+    Mono<CategoryUsageLimit> deleteByUsernameAndCategoryName(final String username, final String categoryName);
 }

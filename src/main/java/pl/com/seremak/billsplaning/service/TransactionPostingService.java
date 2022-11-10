@@ -16,7 +16,7 @@ public class TransactionPostingService {
     private final CategoryUsageLimitService categoryUsageLimitService;
 
     public Mono<Balance> postTransaction(final TransactionEventDto transactionEventDto) {
-        return categoryUsageLimitService.updateCategoryUsageLimit(transactionEventDto)
+        return categoryUsageLimitService.updateCategoryUsageLimitAfterNewTransaction(transactionEventDto)
                 .then(balanceService.updateBalance(transactionEventDto));
     }
 }

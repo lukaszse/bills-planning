@@ -1,6 +1,6 @@
 package pl.com.seremak.billsplaning.converter;
 
-import pl.com.seremak.billsplaning.dto.TransactionEventDto;
+import pl.com.seremak.billsplaning.model.Category;
 import pl.com.seremak.billsplaning.model.CategoryUsageLimit;
 
 import java.math.BigDecimal;
@@ -10,23 +10,13 @@ import static pl.com.seremak.billsplaning.utils.DateUtils.toYearMonthString;
 
 public class CategoryUsageLimitConverter {
 
-    public static CategoryUsageLimit categoryUsageLimitOf(final TransactionEventDto transactionEventDto, final BigDecimal categoryLimit) {
+    public static CategoryUsageLimit categoryUsageLimitOf(final Category category, final Instant transactionYearMonth) {
         return CategoryUsageLimit.builder()
-                .username(transactionEventDto.getUsername())
-                .categoryName(transactionEventDto.getCategoryName())
-                .limit(categoryLimit)
+                .username(category.getUsername())
+                .categoryName(category.getName())
+                .limit(category.getLimit())
                 .usage(BigDecimal.ZERO)
-                .yearMonth(toYearMonthString(transactionEventDto.getDate()).orElseThrow())
-                .build();
-    }
-
-    public static CategoryUsageLimit categoryUsageLimitOf(final String username, final String categoryName, final BigDecimal categoryLimit) {
-        return CategoryUsageLimit.builder()
-                .username(username)
-                .categoryName(categoryName)
-                .limit(categoryLimit)
-                .usage(BigDecimal.ZERO)
-                .yearMonth(toYearMonthString(Instant.now()).orElseThrow())
+                .yearMonth(toYearMonthString(transactionYearMonth).orElseThrow())
                 .build();
     }
 }

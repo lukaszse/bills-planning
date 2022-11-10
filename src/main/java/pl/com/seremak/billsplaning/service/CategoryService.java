@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.ObjectUtils.defaultIfNull;
 import static pl.com.seremak.billsplaning.converter.CategoryConverter.*;
 import static pl.com.seremak.billsplaning.model.Category.TransactionType.EXPENSE;
@@ -76,19 +77,11 @@ public class CategoryService {
     public Mono<Category> deleteCategory(final String username,
                                          final String categoryName,
                                          @Nullable final String incomingReplacementCategory) {
-
-
         return categoryRepository.deleteCategoryByUsernameAndName(username, categoryName)
-                .doOnSuccess(category -> reassignTransactionOfDeletedCategory(category, incomingReplacementCategory));
-    }
-
-    private void reassignTransactionOfDeletedCategory(final Category deletedCategory,
-                                                      @Nullable final String incomingReplacementCategory) {
-        final String replacementCategoryName = defaultIfNull(incomingReplacementCategory, UNDEFINED);
-        findOrCreateUndefinedCategory(deletedCategory.getUsername(), replacementCategoryName, deletedCategory.getTransactionType())
-                .doOnNext(existingReplacementCategoryName -> messagePublisher.sentCategoryDeletionMessage(
-                        CategoryDeletionDto.of(deletedCategory.getUsername(), deletedCategory.getName(), existingReplacementCategoryName)))
-                .subscribe();
+                .doOnSuccess(category -> {
+                    reassignTransactionOfDeletedCategory(category, incomingReplacementCategory);
+                    deleteCategoryUsageLimit(username, categoryName);
+                });
     }
 
     public Mono<List<Category>> createStandardCategoriesForUserIfNotExists(final String username) {
@@ -119,6 +112,19 @@ public class CategoryService {
     }
 
 
+    private void deleteCategoryUsageLimit(final String username, final String categoryName) {
+        categoryUsageLimitService.deleteCategoryUsageLimit(username, categoryName).subscribe();
+    }
+
+    private void reassignTransactionOfDeletedCategory(final Category deletedCategory,
+                                                      @Nullable final String incomingReplacementCategory) {
+        final String replacementCategoryName = defaultIfNull(incomingReplacementCategory, UNDEFINED);
+        findOrCreateUndefinedCategory(deletedCategory.getUsername(), replacementCategoryName, deletedCategory.getTransactionType())
+                .doOnNext(existingReplacementCategoryName -> messagePublisher.sentCategoryDeletionMessage(
+                        CategoryDeletionDto.of(deletedCategory.getUsername(), deletedCategory.getName(), existingReplacementCategoryName)))
+                .subscribe();
+    }
+
     private static Set<Category> findAllMissingCategories(final String username,
                                                           final List<Category> userStandardCategories,
                                                           final List<Category> masterUserStandardCategories) {
@@ -142,13 +148,17 @@ public class CategoryService {
     }
 
     private void createNewCategoryUsageLimit(final Category category) {
-        categoryUsageLimitService.createNewCategoryUsageLimit(category.getUsername(), category.getName())
-                .subscribe();
+        if (nonNull(category)) {
+            categoryUsageLimitService.createNewCategoryUsageLimit(category.getUsername(), category.getName())
+                    .subscribe();
+        }
     }
 
     private void updateCategoryUsageLimit(final Category category) {
-        categoryUsageLimitService.updateCategoryUsageLimit(category.getUsername(), category.getName(), category.getLimit())
-                .subscribe();
+        if (nonNull(category)) {
+            categoryUsageLimitService.updateCategoryUsageLimit(category.getUsername(), category.getName(), category.getLimit())
+                    .subscribe();
+        }
     }
 
     private static Set<String> extractExistingStandardCategoryNamesForUser(final List<Category> userStandardCategories) {
