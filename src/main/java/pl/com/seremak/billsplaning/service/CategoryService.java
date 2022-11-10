@@ -15,6 +15,7 @@ import pl.com.seremak.billsplaning.utils.CollectionUtils;
 import pl.com.seremak.billsplaning.utils.VersionedEntityUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.List;
 import java.util.Set;
@@ -78,10 +79,10 @@ public class CategoryService {
                                          final String categoryName,
                                          @Nullable final String incomingReplacementCategory) {
         return categoryRepository.deleteCategoryByUsernameAndName(username, categoryName)
-                .doOnSuccess(category -> {
-                    reassignTransactionOfDeletedCategory(category, incomingReplacementCategory);
-                    deleteCategoryUsageLimit(username, categoryName);
-                });
+                .publishOn(Schedulers.boundedElastic())
+                .doOnSuccess(category -> reassignTransactionOfDeletedCategory(category, incomingReplacementCategory)
+                        .then(categoryUsageLimitService.deleteCategoryUsageLimit(username, categoryName))
+                        .subscribe());
     }
 
     public Mono<List<Category>> createStandardCategoriesForUserIfNotExists(final String username) {
@@ -111,18 +112,12 @@ public class CategoryService {
         return findAllMissingCategories(username, userStandardCategories, allTypeStandardCategories);
     }
 
-
-    private void deleteCategoryUsageLimit(final String username, final String categoryName) {
-        categoryUsageLimitService.deleteCategoryUsageLimit(username, categoryName).subscribe();
-    }
-
-    private void reassignTransactionOfDeletedCategory(final Category deletedCategory,
-                                                      @Nullable final String incomingReplacementCategory) {
+    private Mono<String> reassignTransactionOfDeletedCategory(final Category deletedCategory,
+                                                              @Nullable final String incomingReplacementCategory) {
         final String replacementCategoryName = defaultIfNull(incomingReplacementCategory, UNDEFINED);
-        findOrCreateUndefinedCategory(deletedCategory.getUsername(), replacementCategoryName, deletedCategory.getTransactionType())
+        return findOrCreateUndefinedCategory(deletedCategory.getUsername(), replacementCategoryName, deletedCategory.getTransactionType())
                 .doOnNext(existingReplacementCategoryName -> messagePublisher.sentCategoryDeletionMessage(
-                        CategoryDeletionDto.of(deletedCategory.getUsername(), deletedCategory.getName(), existingReplacementCategoryName)))
-                .subscribe();
+                        CategoryDeletionDto.of(deletedCategory.getUsername(), deletedCategory.getName(), existingReplacementCategoryName)));
     }
 
     private static Set<Category> findAllMissingCategories(final String username,

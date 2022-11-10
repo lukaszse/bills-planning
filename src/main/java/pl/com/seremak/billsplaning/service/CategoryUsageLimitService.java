@@ -20,6 +20,7 @@ import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 
+import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.ObjectUtils.defaultIfNull;
 import static pl.com.seremak.billsplaning.converter.CategoryUsageLimitConverter.categoryUsageLimitOf;
 import static pl.com.seremak.billsplaning.model.Category.TransactionType.EXPENSE;
@@ -51,7 +52,7 @@ public class CategoryUsageLimitService {
                         transactionEventDto.getCategoryName(), YearMonth.now().toString())
                 .switchIfEmpty(createNewCategoryUsageLimit(transactionEventDto))
                 .flatMap(categoryUsageLimit -> updateCategoryUsageLimitAfterNewTransaction(categoryUsageLimit, transactionEventDto))
-                .doOnSuccess(updatedCategoryUsageLimit ->
+                .doOnNext(updatedCategoryUsageLimit ->
                         log.info("Usage limit for category={} updated.", updatedCategoryUsageLimit.getCategoryName()));
     }
 
@@ -75,12 +76,17 @@ public class CategoryUsageLimitService {
     }
 
     public Mono<CategoryUsageLimit> deleteCategoryUsageLimit(final String username, final String categoryName) {
-        return categoryUsageLimitRepository.deleteByUsernameAndCategoryName(username, categoryName);
+        return categoryUsageLimitRepository.deleteByUsernameAndCategoryName(username, categoryName)
+                .doOnNext(deletedCategoryUsageLimit -> log.info("CategoryUsageLimit for category={} deleted", deletedCategoryUsageLimit.getCategoryName()));
     }
 
     private Mono<CategoryUsageLimit> createCategoryUsageLimitForExpense(final Category category, final Instant transactionYearMonth) {
         if (!EXPENSE.equals(category.getTransactionType())) {
-            log.info("New CategoryUsageLimit will not be created for transactionTy[e={}", category.getTransactionType());
+            log.info("New CategoryUsageLimit will not be created for transactionType={}", category.getTransactionType());
+            return Mono.empty();
+        }
+        if (isNull(category.getLimit())) {
+            log.info("New CategoryUsageLimit will not be created for categoryName={} since category limit is not set", category.getName());
             return Mono.empty();
         }
         return Mono.just(categoryUsageLimitOf(category, transactionYearMonth))
