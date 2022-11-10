@@ -8,14 +8,16 @@ import java.util.stream.Collectors;
 
 public class CategoryConverter {
 
-    public static Category toCategory(final String username, final CategoryDto categoryDto, final List<Category> existingCategoryList) {
-        return existingCategoryList.isEmpty() ?
-                Category.builder()
-                        .username(username)
-                        .transactionType(toTransactionTypeEnum(categoryDto))
-                        .name(categoryDto.getName())
-                        .limit(categoryDto.getLimit())
-                        .build() : null;
+    public static Category toCategory(final String username,
+                                      final CategoryDto categoryDto,
+                                      final Category.Type type) {
+        return Category.builder()
+                .username(username)
+                .type(type)
+                .transactionType(toTransactionTypeEnum(categoryDto))
+                .name(categoryDto.getName())
+                .limit(categoryDto.getLimit())
+                .build();
     }
 
     public static Category toCategory(final String username,

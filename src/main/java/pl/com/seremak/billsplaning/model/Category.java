@@ -19,7 +19,7 @@ import java.math.BigDecimal;
 public class Category extends VersionedEntity {
 
     public enum Type {
-        STANDARD, CUSTOM
+        STANDARD, CUSTOM, UNDEFINED
     }
 
     public enum TransactionType {

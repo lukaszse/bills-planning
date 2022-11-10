@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.ObjectUtils.defaultIfNull;
 import static pl.com.seremak.billsplaning.converter.CategoryConverter.*;
@@ -44,14 +45,7 @@ public class CategoryService {
 
 
     public Mono<Category> createCustomCategory(final String username, final CategoryDto categoryDto) {
-        return categoryRepository.findCategoriesByUsernameAndName(username, categoryDto.getName())
-                .collectList()
-                .mapNotNull(existingCategoryList -> toCategory(username, categoryDto, existingCategoryList))
-                .map(VersionedEntityUtils::setMetadata)
-                .map(categoryRepository::save)
-                .flatMap(mono -> mono)
-                .doOnSuccess(this::createNewCategoryUsageLimit)
-                .switchIfEmpty(Mono.error(new ConflictException(CATEGORY_ALREADY_EXISTS_ERROR_MSG.formatted(username, categoryDto.getName()))));
+        return createCategory(username, categoryDto, Category.Type.CUSTOM);
     }
 
     public Flux<Category> createAllCategories(final Set<Category> categories) {
@@ -112,10 +106,20 @@ public class CategoryService {
         return findAllMissingCategories(username, userStandardCategories, allTypeStandardCategories);
     }
 
+    private Mono<Category> createCategory(final String username, final CategoryDto categoryDto, final Category.Type type) {
+        return categoryRepository.findCategoriesByUsernameAndName(username, categoryDto.getName())
+                .collectList()
+                .mapNotNull(existingCategories -> existingCategories.isEmpty() ? toCategory(username, categoryDto, type) : null)
+                .map(VersionedEntityUtils::setMetadata)
+                .map(categoryRepository::save)
+                .flatMap(mono -> mono)
+                .doOnSuccess(this::createNewCategoryUsageLimit)
+                .switchIfEmpty(Mono.error(new ConflictException(CATEGORY_ALREADY_EXISTS_ERROR_MSG.formatted(username, categoryDto.getName()))));
+    }
+
     private Mono<String> reassignTransactionOfDeletedCategory(final Category deletedCategory,
-                                                              @Nullable final String incomingReplacementCategory) {
-        final String replacementCategoryName = defaultIfNull(incomingReplacementCategory, UNDEFINED);
-        return findOrCreateUndefinedCategory(deletedCategory.getUsername(), replacementCategoryName, deletedCategory.getTransactionType())
+                                                              @Nullable final String replacementCategoryName) {
+        return findOrCreateReplacementCategory(deletedCategory, replacementCategoryName)
                 .doOnNext(existingReplacementCategoryName -> messagePublisher.sentCategoryDeletionMessage(
                         CategoryDeletionDto.of(deletedCategory.getUsername(), deletedCategory.getName(), existingReplacementCategoryName)));
     }
@@ -162,16 +166,17 @@ public class CategoryService {
                 .collect(Collectors.toSet());
     }
 
-    private Mono<String> findOrCreateUndefinedCategory(final String username,
-                                                       final String categoryName,
-                                                       final Category.TransactionType transactionType) {
-        log.info("No replacement category provided. An undefined category will be find or created if not exist already.");
-        return categoryRepository.findCategoriesByUsernameAndName(username, categoryName)
+    private Mono<String> findOrCreateReplacementCategory(final Category deletedCategory,
+                                                         final String replacementCategoryName) {
+        final String finalReplacementCategoryName = defaultIfNull(replacementCategoryName, UNDEFINED);
+        final Category.Type categoryType = isNull(replacementCategoryName) ? Category.Type.UNDEFINED : deletedCategory.getType();
+        return categoryRepository.findCategoriesByUsernameAndName(deletedCategory.getUsername(), finalReplacementCategoryName)
                 .collectList()
                 .mapNotNull(existingCategoryList -> getSoleElementOrThrowException(existingCategoryList, false))
                 .map(Category::getName)
                 .doOnNext(existingCategoryName -> log.info("Category with name={} found in database.", existingCategoryName))
-                .switchIfEmpty(createCustomCategory(username, toCategoryDto(UNDEFINED, transactionType))
+                .switchIfEmpty(Mono.just(toCategoryDto(finalReplacementCategoryName, deletedCategory.getTransactionType()))
+                        .flatMap(categoryDto -> createCategory(deletedCategory.getUsername(), categoryDto, categoryType))
                         .map(Category::getName)
                         .doOnNext(createdCategoryName -> log.info("New category with name={} created.", createdCategoryName)));
     }

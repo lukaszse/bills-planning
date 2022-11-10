@@ -20,12 +20,12 @@ import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 
-import static java.util.Objects.isNull;
+import static java.math.BigDecimal.ZERO;
 import static org.apache.commons.lang3.ObjectUtils.defaultIfNull;
 import static pl.com.seremak.billsplaning.converter.CategoryUsageLimitConverter.categoryUsageLimitOf;
 import static pl.com.seremak.billsplaning.model.Category.TransactionType.EXPENSE;
 import static pl.com.seremak.billsplaning.utils.DateUtils.toYearMonthString;
-import static pl.com.seremak.billsplaning.utils.TransactionBalanceUtils.updateBalance;
+import static pl.com.seremak.billsplaning.utils.TransactionBalanceUtils.updateCategoryUsage;
 
 @Slf4j
 @Service
@@ -85,13 +85,14 @@ public class CategoryUsageLimitService {
             log.info("New CategoryUsageLimit will not be created for transactionType={}", category.getTransactionType());
             return Mono.empty();
         }
-        if (isNull(category.getLimit())) {
-            log.info("New CategoryUsageLimit will not be created for categoryName={} since category limit is not set", category.getName());
+        if (Category.Type.UNDEFINED.equals(category.getType())) {
+            log.info("New CategoryUsageLimit will not be created for STANDARD category with name={}", category.getName());
             return Mono.empty();
         }
         return Mono.just(categoryUsageLimitOf(category, transactionYearMonth))
                 .map(VersionedEntityUtils::setMetadata)
-                .flatMap(categoryUsageLimitRepository::save);
+                .flatMap(categoryUsageLimitRepository::save)
+                .doOnNext(createdCategoryUsageLimit -> log.info("CategoryUsageLimit for categoryName={} created", createdCategoryUsageLimit.getCategoryName()));
     }
 
     private Mono<Category> getLimitForNewCategoryUsageLimit(final String username, final String categoryName) {
@@ -102,7 +103,7 @@ public class CategoryUsageLimitService {
 
     private Mono<CategoryUsageLimit> updateCategoryUsageLimitAfterNewTransaction(final CategoryUsageLimit categoryUsageLimit,
                                                                                  final TransactionEventDto transactionEventDto) {
-        final BigDecimal updatedLimitUsage = updateBalance(categoryUsageLimit.getUsage(), transactionEventDto);
+        final BigDecimal updatedLimitUsage = updateCategoryUsage(categoryUsageLimit.getUsage(), transactionEventDto);
         categoryUsageLimit.setUsage(updatedLimitUsage);
         return categoryUsageLimitSearchRepository.updateCategoryUsageLimit(categoryUsageLimit);
     }
@@ -114,7 +115,7 @@ public class CategoryUsageLimitService {
 
     private static List<CategoryUsageLimit> extractTotalUsageLimit(final List<CategoryUsageLimit> categoryUsageLimits) {
         final Optional<Pair<BigDecimal, BigDecimal>> totalUsageAndLimitOpt = categoryUsageLimits.stream()
-                .map(categoryUsageLimit -> Pair.of(categoryUsageLimit.getUsage(), categoryUsageLimit.getLimit()))
+                .map(categoryUsageLimit -> Pair.of(defaultIfNull(categoryUsageLimit.getUsage(), ZERO), defaultIfNull(categoryUsageLimit.getLimit(), ZERO)))
                 .reduce((usageAndLimit1, usageAndLimit2) ->
                         Pair.of(usageAndLimit1.getFirst().add(usageAndLimit2.getFirst()), usageAndLimit1.getSecond().add(usageAndLimit2.getSecond())));
         final Optional<CategoryUsageLimit> totalOpt = categoryUsageLimits.stream().findFirst()
