@@ -18,6 +18,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import static java.math.BigDecimal.ZERO;
@@ -41,6 +42,8 @@ public class CategoryUsageLimitService {
         final String yearMonthToSearch = defaultIfNull(yearMonth, toYearMonthString(Instant.now()).orElseThrow());
         final Mono<List<CategoryUsageLimit>> categoriesUsageLimitsMono =
                 categoryUsageLimitRepository.findByUsernameAndYearMonth(username, yearMonthToSearch)
+                        .filter(categoryUsageLimit -> Objects.nonNull(categoryUsageLimit.getUsage())
+                                && !categoryUsageLimit.getUsage().equals(ZERO))
                         .collectList();
         return total ?
                 categoriesUsageLimitsMono.map(CategoryUsageLimitService::extractTotalUsageLimit) :

@@ -27,7 +27,7 @@ public class CategoryUsageLimitEndpoint {
     private final JwtExtractionHelper jwtExtractionHelper;
 
     @GetMapping(produces = APPLICATION_JSON_VALUE)
-    public Mono<ResponseEntity<List<CategoryUsageLimit>>> getAllCategoryUsageLimits(
+    public Mono<ResponseEntity<List<CategoryUsageLimit>>> findAllCategoryUsageLimits(
             final JwtAuthenticationToken principal,
             @Nullable @RequestParam final String yearMonth,
             @RequestParam(value = "total", required = false, defaultValue = "false") final boolean total) {
