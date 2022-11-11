@@ -11,6 +11,7 @@ import pl.com.seremak.billsplaning.repository.CategoryRepository;
 import pl.com.seremak.billsplaning.repository.CategoryUsageLimitRepository;
 import pl.com.seremak.billsplaning.repository.CategoryUsageLimitSearchRepository;
 import pl.com.seremak.billsplaning.utils.CollectionUtils;
+import pl.com.seremak.billsplaning.utils.DateUtils;
 import pl.com.seremak.billsplaning.utils.VersionedEntityUtils;
 import reactor.core.publisher.Mono;
 
@@ -18,10 +19,10 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.YearMonth;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 import static java.math.BigDecimal.ZERO;
+import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.ObjectUtils.defaultIfNull;
 import static pl.com.seremak.billsplaning.converter.CategoryUsageLimitConverter.categoryUsageLimitOf;
 import static pl.com.seremak.billsplaning.model.Category.TransactionType.EXPENSE;
@@ -42,7 +43,7 @@ public class CategoryUsageLimitService {
         final String yearMonthToSearch = defaultIfNull(yearMonth, toYearMonthString(Instant.now()).orElseThrow());
         final Mono<List<CategoryUsageLimit>> categoriesUsageLimitsMono =
                 categoryUsageLimitRepository.findByUsernameAndYearMonth(username, yearMonthToSearch)
-                        .filter(categoryUsageLimit -> Objects.nonNull(categoryUsageLimit.getUsage())
+                        .filter(categoryUsageLimit -> nonNull(categoryUsageLimit.getUsage())
                                 && !categoryUsageLimit.getUsage().equals(ZERO))
                         .collectList();
         return total ?
@@ -51,8 +52,9 @@ public class CategoryUsageLimitService {
     }
 
     public Mono<CategoryUsageLimit> updateCategoryUsageLimitAfterNewTransaction(final TransactionEventDto transactionEventDto) {
+        final String yearMonth = getTransactionYearMonthOrSetCurrentIfNotExists(transactionEventDto);
         return categoryUsageLimitRepository.findByUsernameAndCategoryNameAndYearMonth(transactionEventDto.getUsername(),
-                        transactionEventDto.getCategoryName(), YearMonth.now().toString())
+                        transactionEventDto.getCategoryName(), yearMonth)
                 .switchIfEmpty(createNewCategoryUsageLimit(transactionEventDto))
                 .flatMap(categoryUsageLimit -> updateCategoryUsageLimitAfterNewTransaction(categoryUsageLimit, transactionEventDto))
                 .doOnNext(updatedCategoryUsageLimit ->
@@ -133,5 +135,12 @@ public class CategoryUsageLimitService {
         return totalOpt
                 .map(List::of)
                 .orElse(List.of());
+    }
+
+    private static String getTransactionYearMonthOrSetCurrentIfNotExists(final TransactionEventDto transactionEventDto) {
+        return Optional.ofNullable(transactionEventDto)
+                .map(TransactionEventDto::getDate)
+                .flatMap(DateUtils::toYearMonthString)
+                .orElse(Instant.now().toString());
     }
 }
