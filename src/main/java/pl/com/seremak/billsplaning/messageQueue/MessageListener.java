@@ -6,11 +6,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Component;
-import pl.com.seremak.billsplaning.dto.TransactionDto;
-import pl.com.seremak.billsplaning.service.CategoryService;
+import pl.com.seremak.billsplaning.dto.TransactionEventDto;
 import pl.com.seremak.billsplaning.service.TransactionPostingService;
+import pl.com.seremak.billsplaning.service.UserSetupService;
 
-import static pl.com.seremak.billsplaning.config.RabbitMQConfig.BILL_ACTION_MESSAGE;
+import static pl.com.seremak.billsplaning.config.RabbitMQConfig.TRANSACTION_QUEUE;
 import static pl.com.seremak.billsplaning.config.RabbitMQConfig.USER_CREATION_QUEUE;
 
 @Slf4j
@@ -18,21 +18,21 @@ import static pl.com.seremak.billsplaning.config.RabbitMQConfig.USER_CREATION_QU
 @RequiredArgsConstructor
 public class MessageListener {
 
-    private final CategoryService categoryService;
+    private final UserSetupService userSetupService;
     private final TransactionPostingService transactionPostingService;
 
 
     @RabbitListener(queues = USER_CREATION_QUEUE)
     public void receiveUserCreationMessage(final String username) {
         log.info("User creation message received. Username={}", username);
-        categoryService.createStandardCategoriesForUserIfNotExists(username);
+        userSetupService.setupUser(username);
     }
 
-    @RabbitListener(queues = BILL_ACTION_MESSAGE)
-    public void receiveBillActionMessage(final Message<TransactionDto> transactionMessage) {
-        final TransactionDto transaction = transactionMessage.getPayload();
+    @RabbitListener(queues = TRANSACTION_QUEUE)
+    public void receiveTransactionMessage(final Message<TransactionEventDto> transactionMessage) {
+        final TransactionEventDto transaction = transactionMessage.getPayload();
         log.info("Transaction message received. Username={}", transaction);
-        transactionPostingService.postTransaction(transaction.getUsername(), transaction)
+        transactionPostingService.postTransaction(transaction)
                 .subscribe();
     }
 }

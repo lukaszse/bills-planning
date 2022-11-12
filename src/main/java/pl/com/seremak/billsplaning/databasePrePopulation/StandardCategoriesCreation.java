@@ -23,7 +23,10 @@ public class StandardCategoriesCreation {
     private final CategoryService categoryService;
 
     @Setter
-    private List<String> categories;
+    private List<String> incomeCategories;
+
+    @Setter
+    private List<String> expenseCategories;
 
     @EventListener
     public void onApplicationEvent(final ContextRefreshedEvent event) {
@@ -34,7 +37,7 @@ public class StandardCategoriesCreation {
         log.info("Looking for missing standard categories...");
         categoryService.findStandardCategoriesForUser(MASTER_USER)
                 .collectList()
-                .map(masterUserCategories -> findAllMissingCategories(MASTER_USER, masterUserCategories, categories))
+                .map(masterUserCategories -> findAllMissingCategories(MASTER_USER, masterUserCategories, incomeCategories, expenseCategories))
                 .flatMapMany(categoryService::createAllCategories)
                 .collectList()
                 .doOnSuccess(CategoryService::logMissingCategoryAddingSummary)

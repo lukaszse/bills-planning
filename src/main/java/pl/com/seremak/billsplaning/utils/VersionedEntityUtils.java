@@ -30,4 +30,13 @@ public class VersionedEntityUtils {
                 .set(MODIFIED_AT_FIELD, Instant.now())
                 .inc(VERSION_FIELD, 1);
     }
+
+    public static VersionedEntity updateMetadata(final VersionedEntity versionedEntity) {
+        final Metadata metadata = versionedEntity.getMetadata();
+        long version = metadata.getVersion();
+        metadata.setVersion(++version);
+        metadata.setModifiedAt(Instant.now());
+        versionedEntity.setMetadata(metadata);
+        return versionedEntity;
+    }
 }

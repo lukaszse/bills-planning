@@ -1,11 +1,7 @@
 package pl.com.seremak.billsplaning.model;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.mongodb.lang.Nullable;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.data.mongodb.core.mapping.FieldType;
@@ -17,13 +13,17 @@ import java.math.BigDecimal;
 @Getter
 @Setter
 @Document
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Category extends VersionedEntity {
 
     public enum Type {
-        STANDARD, CUSTOM
+        STANDARD, CUSTOM, UNDEFINED
+    }
+
+    public enum TransactionType {
+        INCOME, EXPENSE
     }
 
     @NotNull(message = "Username cannot be blank")
@@ -35,22 +35,12 @@ public class Category extends VersionedEntity {
     @Nullable
     private Type type;
 
+    @NotNull
+    private TransactionType transactionType;
+
     @Nullable
     @Field(targetType = FieldType.DECIMAL128)
     private BigDecimal limit;
 
     private BigDecimal usageOfLimit;
-
-
-    public static Category of(final String username, final String name, final Type type) {
-        return new Category(username, name, type, null, null);
-    }
-
-    public static Category of(final String username, final String name, final BigDecimal limit) {
-        return new Category(username, name, Type.CUSTOM, limit, null);
-    }
-
-    public static Category of(final String username, final String name) {
-        return new Category(username, name, Type.CUSTOM, null, null);
-    }
 }

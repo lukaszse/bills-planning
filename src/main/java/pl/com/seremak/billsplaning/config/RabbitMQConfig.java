@@ -1,5 +1,6 @@
 package pl.com.seremak.billsplaning.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.AmqpAdmin;
@@ -20,9 +21,10 @@ public class RabbitMQConfig {
 
     public static final String USER_CREATION_QUEUE = "userCreation";
     public static final String CATEGORY_DELETION_QUEUE = "categoryDeletionQueue";
-    public static final String BILL_ACTION_MESSAGE = "billAction";
+    public static final String TRANSACTION_QUEUE = "transaction";
 
     private final CachingConnectionFactory cachingConnectionFactory;
+    private final ObjectMapper objectMapper;
 
 
     @Bean
@@ -34,7 +36,7 @@ public class RabbitMQConfig {
 
     @Bean
     public Jackson2JsonMessageConverter producerJackson2MessageConverter() {
-        return new Jackson2JsonMessageConverter();
+        return new Jackson2JsonMessageConverter(objectMapper);
     }
 
     /**
@@ -57,7 +59,7 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public Queue billActionQueue() {
-        return new Queue(BILL_ACTION_MESSAGE, false);
+    public Queue transactionQueue() {
+        return new Queue(TRANSACTION_QUEUE, false);
     }
 }

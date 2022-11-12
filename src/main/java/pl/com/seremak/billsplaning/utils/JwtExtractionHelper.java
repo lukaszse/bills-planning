@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
@@ -16,7 +17,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class JwtExtractionHelper {
 
-    public static final String EXTRACTING_TOKEN_ERROR_MSG = "Error while extracting token. Reason: %s";
+    private static final String EXTRACTING_TOKEN_ERROR_MSG = "Error while extracting token. Reason: %s";
+    public static final String TOKEN_NOT_MATCH = "Token not match";
     private final ObjectMapper objectMapper;
 
 
@@ -31,7 +33,13 @@ public class JwtExtractionHelper {
             });
         } catch (final Exception e) {
             final String errorMsg = EXTRACTING_TOKEN_ERROR_MSG.formatted(e.getMessage());
-            log.error(errorMsg);
+            throw new AuthenticationServiceException(errorMsg);
+        }
+    }
+
+    public static void validateUsername(final String tokenUsername, final String bodyUsername) {
+        if (!StringUtils.equals(tokenUsername, bodyUsername)) {
+            final String errorMsg = EXTRACTING_TOKEN_ERROR_MSG.formatted(TOKEN_NOT_MATCH);
             throw new AuthenticationServiceException(errorMsg);
         }
     }

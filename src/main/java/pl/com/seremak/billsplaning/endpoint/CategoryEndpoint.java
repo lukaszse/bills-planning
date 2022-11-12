@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
+import pl.com.seremak.billsplaning.converter.CategoryConverter;
 import pl.com.seremak.billsplaning.dto.CategoryDto;
 import pl.com.seremak.billsplaning.model.Category;
 import pl.com.seremak.billsplaning.service.CategoryService;
@@ -31,12 +32,13 @@ public class CategoryEndpoint {
     private final JwtExtractionHelper jwtExtractionHelper;
 
     @PostMapping(produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
-    public Mono<ResponseEntity<CategoryDto>> createCategory(final JwtAuthenticationToken principal, @Valid @RequestBody final CategoryDto categoryDto) {
+    public Mono<ResponseEntity<CategoryDto>> createCategory(final JwtAuthenticationToken principal,
+                                                            @Valid @RequestBody final CategoryDto categoryDto) {
         final String username = jwtExtractionHelper.extractUsername(principal);
         log.info("Category creation request for username={} and categoryName={}", username, categoryDto.getName());
         return categoryService.createCustomCategory(username, categoryDto)
                 .doOnSuccess(category -> log.info("Category with name={} and username={} successfully created for", category.getName(), category.getUsername()))
-                .map(CategoryDto::of)
+                .map(CategoryConverter::toCategoryDto)
                 .map(category -> EndpointUtils.createResponse(CATEGORY_URI_PATTERN, category.getName(), category));
     }
 
@@ -50,7 +52,8 @@ public class CategoryEndpoint {
     }
 
     @GetMapping(value = "{categoryName}", produces = APPLICATION_JSON_VALUE)
-    public Mono<ResponseEntity<Category>> findCategoryByName(final JwtAuthenticationToken principal, @PathVariable final String categoryName) {
+    public Mono<ResponseEntity<Category>> findCategoryByName(final JwtAuthenticationToken principal,
+                                                             @PathVariable final String categoryName) {
         final String username = jwtExtractionHelper.extractUsername(principal);
         log.info("Looking for category with name={} and username={}", categoryName, username);
         return categoryService.findCategory(username, categoryName)
@@ -65,7 +68,7 @@ public class CategoryEndpoint {
         log.info("Updating Category with username={} and categoryName={}", username, categoryDto.getName());
         return categoryService.updateCategory(username, categoryDto)
                 .doOnSuccess(updatedCategory -> log.info("Category with username={} and categoryName={} updated.", updatedCategory.getUsername(), updatedCategory.getName()))
-                .map(CategoryDto::of)
+                .map(CategoryConverter::toCategoryDto)
                 .map(ResponseEntity::ok);
     }
 
