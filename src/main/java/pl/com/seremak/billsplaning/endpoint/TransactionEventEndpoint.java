@@ -23,9 +23,7 @@ import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 @RequestMapping("/transactionsEvents")
 @RequiredArgsConstructor
 public class TransactionEventEndpoint {
-
-    public static final String BILL_PLAN_URI_PATTERN = "/billPlans/%s";
-    public static final String EXTRACTING_TOKEN_ERROR_MSG = "Error while extracting token. Reason: %s";
+    
     private final TransactionPostingService transactionPostingService;
     private final JwtExtractionHelper jwtExtractionHelper;
 
