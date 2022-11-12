@@ -7,7 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
-import pl.com.seremak.billsplaning.converter.CategoryConverter;
 import pl.com.seremak.billsplaning.dto.CategoryDto;
 import pl.com.seremak.billsplaning.model.Category;
 import pl.com.seremak.billsplaning.service.CategoryService;
@@ -32,13 +31,12 @@ public class CategoryEndpoint {
     private final JwtExtractionHelper jwtExtractionHelper;
 
     @PostMapping(produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
-    public Mono<ResponseEntity<CategoryDto>> createCategory(final JwtAuthenticationToken principal,
-                                                            @Valid @RequestBody final CategoryDto categoryDto) {
+    public Mono<ResponseEntity<Category>> createCategory(final JwtAuthenticationToken principal,
+                                                         @Valid @RequestBody final CategoryDto categoryDto) {
         final String username = jwtExtractionHelper.extractUsername(principal);
         log.info("Category creation request received for username={} and categoryName={}", username, categoryDto.getName());
         return categoryService.createCustomCategory(username, categoryDto)
                 .doOnSuccess(category -> log.info("Category with name={} and username={} successfully created for", category.getName(), category.getUsername()))
-                .map(CategoryConverter::toCategoryDto)
                 .map(category -> EndpointUtils.prepareCreatedResponse(CATEGORY_URI_PATTERN, category.getName(), category));
     }
 
@@ -61,21 +59,20 @@ public class CategoryEndpoint {
                 .map(ResponseEntity::ok);
     }
 
-    @PatchMapping(value = "{name}")
-    private Mono<ResponseEntity<CategoryDto>> updateCategory(final JwtAuthenticationToken principal,
-                                                             @Valid @RequestBody final CategoryDto categoryDto) {
+    @PatchMapping(value = "{name}", produces = APPLICATION_JSON_VALUE)
+    private Mono<ResponseEntity<Category>> updateCategory(final JwtAuthenticationToken principal,
+                                                          @Valid @RequestBody final CategoryDto categoryDto) {
         final String username = jwtExtractionHelper.extractUsername(principal);
         log.info("Updating Category with username={} and categoryName={}", username, categoryDto.getName());
         return categoryService.updateCategory(username, categoryDto)
                 .doOnSuccess(updatedCategory -> log.info("Category with username={} and categoryName={} updated.", updatedCategory.getUsername(), updatedCategory.getName()))
-                .map(CategoryConverter::toCategoryDto)
                 .map(ResponseEntity::ok);
     }
 
     @DeleteMapping(value = "{category}")
-    private Mono<ResponseEntity<String>> deleteCategoryName(final JwtAuthenticationToken principal,
-                                                            @PathVariable final String category,
-                                                            @RequestParam @Nullable final String replacementCategory) {
+    private Mono<ResponseEntity<Void>> deleteCategoryName(final JwtAuthenticationToken principal,
+                                                          @PathVariable final String category,
+                                                          @RequestParam @Nullable final String replacementCategory) {
         final String username = jwtExtractionHelper.extractUsername(principal);
         log.info("Deleting category with name={} and username={}", category, username);
         return categoryService.deleteCategory(username, category, replacementCategory)
