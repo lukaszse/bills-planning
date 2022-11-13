@@ -8,7 +8,6 @@ import pl.com.seremak.billsplaning.messageQueue.MessagePublisher;
 import pl.com.seremak.billsplaning.repository.CategoryRepository;
 import pl.com.seremak.billsplaning.repository.CategorySearchRepository;
 import pl.com.seremak.simplebills.commons.dto.http.CategoryDto;
-import pl.com.seremak.simplebills.commons.dto.queue.CategoryDeletionDto;
 import pl.com.seremak.simplebills.commons.exceptions.ConflictException;
 import pl.com.seremak.simplebills.commons.model.Category;
 import pl.com.seremak.simplebills.commons.utils.CollectionUtils;
@@ -120,8 +119,8 @@ public class CategoryService {
     private Mono<String> reassignTransactionOfDeletedCategory(final Category deletedCategory,
                                                               @Nullable final String replacementCategoryName) {
         return findOrCreateReplacementCategory(deletedCategory, replacementCategoryName)
-                .doOnNext(existingReplacementCategoryName -> messagePublisher.sentCategoryDeletionMessage(
-                        new CategoryDeletionDto(deletedCategory.getUsername(), deletedCategory.getName(), existingReplacementCategoryName)));
+                .doOnNext(existingReplacementCategoryName ->
+                        messagePublisher.sentCategoryDeletionMessage(toCategoryDeletionEventDto(deletedCategory, existingReplacementCategoryName)));
     }
 
     private static Set<Category> findAllMissingCategories(final String username,
