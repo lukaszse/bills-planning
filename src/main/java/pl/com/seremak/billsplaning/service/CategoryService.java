@@ -8,6 +8,7 @@ import pl.com.seremak.billsplaning.messageQueue.MessagePublisher;
 import pl.com.seremak.billsplaning.repository.CategoryRepository;
 import pl.com.seremak.billsplaning.repository.CategorySearchRepository;
 import pl.com.seremak.simplebills.commons.dto.http.CategoryDto;
+import pl.com.seremak.simplebills.commons.dto.queue.CategoryCreationRequestDto;
 import pl.com.seremak.simplebills.commons.exceptions.ConflictException;
 import pl.com.seremak.simplebills.commons.model.Category;
 import pl.com.seremak.simplebills.commons.utils.CollectionUtils;
@@ -45,6 +46,10 @@ public class CategoryService {
 
     public Mono<Category> createCustomCategory(final String username, final CategoryDto categoryDto) {
         return createCategory(username, categoryDto, Category.Type.CUSTOM);
+    }
+
+    public Mono<Category> createCustomCategory(final CategoryCreationRequestDto categoryCreationRequestDto) {
+        return createCategory(toCategory(categoryCreationRequestDto, Category.Type.CUSTOM));
     }
 
     public Flux<Category> createAllCategories(final Set<Category> categories) {
@@ -106,15 +111,20 @@ public class CategoryService {
     }
 
     private Mono<Category> createCategory(final String username, final CategoryDto categoryDto, final Category.Type type) {
-        return categoryRepository.findCategoriesByUsernameAndName(username, categoryDto.getName())
+        return createCategory(toCategory(username, categoryDto, type));
+    }
+
+    private Mono<Category> createCategory(final Category category) {
+        return categoryRepository.findCategoriesByUsernameAndName(category.getUsername(), category.getName())
                 .collectList()
-                .mapNotNull(existingCategories -> existingCategories.isEmpty() ? toCategory(username, categoryDto, type) : null)
+                .mapNotNull(existingCategories -> existingCategories.isEmpty() ? category : null)
                 .map(VersionedEntityUtils::setMetadata)
                 .map(categoryRepository::save)
                 .flatMap(mono -> mono)
                 .doOnSuccess(this::createNewCategoryUsageLimit)
-                .switchIfEmpty(Mono.error(new ConflictException(CATEGORY_ALREADY_EXISTS_ERROR_MSG.formatted(username, categoryDto.getName()))));
+                .switchIfEmpty(Mono.error(new ConflictException(CATEGORY_ALREADY_EXISTS_ERROR_MSG.formatted(category.getUsername(), category.getName()))));
     }
+
 
     private Mono<String> reassignTransactionOfDeletedCategory(final Category deletedCategory,
                                                               @Nullable final String replacementCategoryName) {

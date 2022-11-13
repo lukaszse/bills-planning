@@ -22,6 +22,7 @@ public class RabbitMQConfig {
     public static final String USER_CREATION_QUEUE = "userCreation";
     public static final String CATEGORY_QUEUE = "categoryQueue";
     public static final String TRANSACTION_QUEUE = "transaction";
+    public static final String CATEGORY_CREATION_REQUEST_QUEUE = "categoryCreationRequest";
 
     private final CachingConnectionFactory cachingConnectionFactory;
     private final ObjectMapper objectMapper;

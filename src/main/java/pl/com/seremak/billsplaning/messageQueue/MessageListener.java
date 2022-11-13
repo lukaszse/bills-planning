@@ -6,12 +6,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Component;
+import pl.com.seremak.billsplaning.service.CategoryService;
 import pl.com.seremak.billsplaning.service.TransactionPostingService;
 import pl.com.seremak.billsplaning.service.UserSetupService;
+import pl.com.seremak.simplebills.commons.dto.queue.CategoryCreationRequestDto;
 import pl.com.seremak.simplebills.commons.dto.queue.TransactionEventDto;
 
-import static pl.com.seremak.billsplaning.config.RabbitMQConfig.TRANSACTION_QUEUE;
-import static pl.com.seremak.billsplaning.config.RabbitMQConfig.USER_CREATION_QUEUE;
+import static pl.com.seremak.billsplaning.config.RabbitMQConfig.*;
 
 @Slf4j
 @Component
@@ -20,6 +21,7 @@ public class MessageListener {
 
     private final UserSetupService userSetupService;
     private final TransactionPostingService transactionPostingService;
+    private final CategoryService categoryService;
 
 
     @RabbitListener(queues = USER_CREATION_QUEUE)
@@ -31,8 +33,20 @@ public class MessageListener {
     @RabbitListener(queues = TRANSACTION_QUEUE)
     public void receiveTransactionMessage(final Message<TransactionEventDto> transactionMessage) {
         final TransactionEventDto transaction = transactionMessage.getPayload();
-        log.info("Transaction message received. Username={}", transaction);
+        log.info("Transaction message received: username={}, categoryName={}", transaction.getUsername(), transaction.getCategoryName());
         transactionPostingService.postTransaction(transaction)
+                .doOnSuccess(updatedBalance -> log.info("Balance for username={} updated.", updatedBalance.getUsername()))
+                .subscribe();
+    }
+
+    @RabbitListener(queues = CATEGORY_CREATION_REQUEST_QUEUE)
+    public void receiveCategoryCreationRequestMessage(final Message<CategoryCreationRequestDto> categoryCreationRequestDtoMessage) {
+        final CategoryCreationRequestDto categoryCreationRequestDto = categoryCreationRequestDtoMessage.getPayload();
+        log.info("CategoryCreationRequestDto message received: username={}, categoryName={}",
+                categoryCreationRequestDto.getUsername(), categoryCreationRequestDto.getCategoryName());
+        categoryService.createCustomCategory(categoryCreationRequestDto)
+                .doOnSuccess(createdCategory -> log.info("Category with name={} and username={} created.",
+                        createdCategory.getName(), createdCategory.getUsername()))
                 .subscribe();
     }
 }
