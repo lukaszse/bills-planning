@@ -63,4 +63,9 @@ public class RabbitMQConfig {
     public Queue transactionQueue() {
         return new Queue(TRANSACTION_QUEUE, false);
     }
+
+    @Bean
+    public Queue categoryCreationRequestQueue() {
+        return new Queue(CATEGORY_CREATION_REQUEST_QUEUE, false);
+    }
 }

@@ -15,7 +15,7 @@ public class MessagePublisher {
 
     private final RabbitTemplate rabbitTemplate;
 
-    public void sentCategoryDeletionMessage(final CategoryEventDto categoryEventDto) {
+    public void sendCategoryEventMessage(final CategoryEventDto categoryEventDto) {
         rabbitTemplate.convertAndSend(CATEGORY_QUEUE, categoryEventDto);
         log.info("Message sent: queue={}, message={}", CATEGORY_QUEUE, categoryEventDto);
     }

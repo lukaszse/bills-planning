@@ -130,7 +130,7 @@ public class CategoryService {
                                                               @Nullable final String replacementCategoryName) {
         return findOrCreateReplacementCategory(deletedCategory, replacementCategoryName)
                 .doOnNext(existingReplacementCategoryName ->
-                        messagePublisher.sentCategoryDeletionMessage(toCategoryDeletionEventDto(deletedCategory, existingReplacementCategoryName)));
+                        messagePublisher.sendCategoryEventMessage(toCategoryDeletionEventDto(deletedCategory, existingReplacementCategoryName)));
     }
 
     private static Set<Category> findAllMissingCategories(final String username,
