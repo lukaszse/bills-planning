@@ -4,15 +4,15 @@ import com.mongodb.lang.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import pl.com.seremak.billsplaning.dto.CategoryDto;
-import pl.com.seremak.billsplaning.exceptions.ConflictException;
 import pl.com.seremak.billsplaning.messageQueue.MessagePublisher;
-import pl.com.seremak.billsplaning.messageQueue.queueDto.CategoryDeletionDto;
-import pl.com.seremak.billsplaning.model.Category;
 import pl.com.seremak.billsplaning.repository.CategoryRepository;
 import pl.com.seremak.billsplaning.repository.CategorySearchRepository;
-import pl.com.seremak.billsplaning.utils.CollectionUtils;
-import pl.com.seremak.billsplaning.utils.VersionedEntityUtils;
+import pl.com.seremak.simplebills.commons.dto.http.CategoryDto;
+import pl.com.seremak.simplebills.commons.dto.queue.CategoryDeletionDto;
+import pl.com.seremak.simplebills.commons.exceptions.ConflictException;
+import pl.com.seremak.simplebills.commons.model.Category;
+import pl.com.seremak.simplebills.commons.utils.CollectionUtils;
+import pl.com.seremak.simplebills.commons.utils.VersionedEntityUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -24,12 +24,12 @@ import java.util.stream.Collectors;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.ObjectUtils.defaultIfNull;
-import static pl.com.seremak.billsplaning.converter.CategoryConverter.*;
-import static pl.com.seremak.billsplaning.model.Category.TransactionType.EXPENSE;
-import static pl.com.seremak.billsplaning.model.Category.TransactionType.INCOME;
 import static pl.com.seremak.billsplaning.utils.BillPlanConstants.MASTER_USER;
-import static pl.com.seremak.billsplaning.utils.CollectionUtils.getSoleElementOrThrowException;
-import static pl.com.seremak.billsplaning.utils.CollectionUtils.mergeLists;
+import static pl.com.seremak.simplebills.commons.converter.CategoryConverter.*;
+import static pl.com.seremak.simplebills.commons.model.Category.TransactionType.EXPENSE;
+import static pl.com.seremak.simplebills.commons.model.Category.TransactionType.INCOME;
+import static pl.com.seremak.simplebills.commons.utils.CollectionUtils.getSoleElementOrThrowException;
+import static pl.com.seremak.simplebills.commons.utils.CollectionUtils.mergeLists;
 
 @Slf4j
 @Service
@@ -121,7 +121,7 @@ public class CategoryService {
                                                               @Nullable final String replacementCategoryName) {
         return findOrCreateReplacementCategory(deletedCategory, replacementCategoryName)
                 .doOnNext(existingReplacementCategoryName -> messagePublisher.sentCategoryDeletionMessage(
-                        CategoryDeletionDto.of(deletedCategory.getUsername(), deletedCategory.getName(), existingReplacementCategoryName)));
+                        new CategoryDeletionDto(deletedCategory.getUsername(), deletedCategory.getName(), existingReplacementCategoryName)));
     }
 
     private static Set<Category> findAllMissingCategories(final String username,

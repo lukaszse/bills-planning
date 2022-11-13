@@ -6,10 +6,10 @@ import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
-import pl.com.seremak.billsplaning.model.Category;
+import pl.com.seremak.simplebills.commons.model.Category;
 import reactor.core.publisher.Mono;
 
-import static pl.com.seremak.billsplaning.utils.MongoQueryHelper.preparePartialUpdateQuery;
+import static pl.com.seremak.simplebills.commons.utils.MongoQueryHelper.preparePartialUpdateQuery;
 
 @Repository
 @RequiredArgsConstructor

@@ -4,15 +4,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
-import pl.com.seremak.billsplaning.dto.TransactionEventDto;
-import pl.com.seremak.billsplaning.model.Category;
-import pl.com.seremak.billsplaning.model.CategoryUsageLimit;
 import pl.com.seremak.billsplaning.repository.CategoryRepository;
 import pl.com.seremak.billsplaning.repository.CategoryUsageLimitRepository;
 import pl.com.seremak.billsplaning.repository.CategoryUsageLimitSearchRepository;
-import pl.com.seremak.billsplaning.utils.CollectionUtils;
-import pl.com.seremak.billsplaning.utils.DateUtils;
-import pl.com.seremak.billsplaning.utils.VersionedEntityUtils;
+import pl.com.seremak.simplebills.commons.dto.queue.TransactionEventDto;
+import pl.com.seremak.simplebills.commons.model.Category;
+import pl.com.seremak.simplebills.commons.model.CategoryUsageLimit;
+import pl.com.seremak.simplebills.commons.utils.CollectionUtils;
+import pl.com.seremak.simplebills.commons.utils.DateUtils;
+import pl.com.seremak.simplebills.commons.utils.VersionedEntityUtils;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
@@ -24,10 +24,10 @@ import java.util.Optional;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.ObjectUtils.defaultIfNull;
-import static pl.com.seremak.billsplaning.converter.CategoryUsageLimitConverter.categoryUsageLimitOf;
-import static pl.com.seremak.billsplaning.model.Category.TransactionType.EXPENSE;
-import static pl.com.seremak.billsplaning.utils.DateUtils.toYearMonthString;
-import static pl.com.seremak.billsplaning.utils.TransactionBalanceUtils.updateCategoryUsage;
+import static pl.com.seremak.simplebills.commons.converter.CategoryUsageLimitConverter.categoryUsageLimitOf;
+import static pl.com.seremak.simplebills.commons.model.Transaction.Type.EXPENSE;
+import static pl.com.seremak.simplebills.commons.utils.DateUtils.toYearMonthString;
+import static pl.com.seremak.simplebills.commons.utils.TransactionBalanceUtils.updateCategoryUsage;
 
 @Slf4j
 @Service

@@ -6,9 +6,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Component;
-import pl.com.seremak.billsplaning.dto.TransactionEventDto;
 import pl.com.seremak.billsplaning.service.TransactionPostingService;
 import pl.com.seremak.billsplaning.service.UserSetupService;
+import pl.com.seremak.simplebills.commons.dto.queue.TransactionEventDto;
 
 import static pl.com.seremak.billsplaning.config.RabbitMQConfig.TRANSACTION_QUEUE;
 import static pl.com.seremak.billsplaning.config.RabbitMQConfig.USER_CREATION_QUEUE;

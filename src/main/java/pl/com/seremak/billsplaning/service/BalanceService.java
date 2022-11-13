@@ -4,12 +4,12 @@ package pl.com.seremak.billsplaning.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import pl.com.seremak.billsplaning.dto.TransactionEventDto;
-import pl.com.seremak.billsplaning.exceptions.NotFoundException;
-import pl.com.seremak.billsplaning.model.Balance;
 import pl.com.seremak.billsplaning.repository.BalanceRepository;
-import pl.com.seremak.billsplaning.utils.TransactionBalanceUtils;
-import pl.com.seremak.billsplaning.utils.VersionedEntityUtils;
+import pl.com.seremak.simplebills.commons.dto.queue.TransactionEventDto;
+import pl.com.seremak.simplebills.commons.exceptions.NotFoundException;
+import pl.com.seremak.simplebills.commons.model.Balance;
+import pl.com.seremak.simplebills.commons.utils.TransactionBalanceUtils;
+import pl.com.seremak.simplebills.commons.utils.VersionedEntityUtils;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
