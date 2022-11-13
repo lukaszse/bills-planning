@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import pl.com.seremak.billsplaning.service.CategoryService;
 import pl.com.seremak.billsplaning.service.TransactionPostingService;
 import pl.com.seremak.billsplaning.service.UserSetupService;
-import pl.com.seremak.simplebills.commons.dto.queue.CategoryCreationRequestDto;
+import pl.com.seremak.simplebills.commons.dto.http.CategoryDto;
 import pl.com.seremak.simplebills.commons.dto.queue.TransactionEventDto;
 
 import static pl.com.seremak.billsplaning.config.RabbitMQConfig.*;
@@ -40,11 +40,11 @@ public class MessageListener {
     }
 
     @RabbitListener(queues = CATEGORY_CREATION_REQUEST_QUEUE)
-    public void receiveCategoryCreationRequestMessage(final Message<CategoryCreationRequestDto> categoryCreationRequestDtoMessage) {
-        final CategoryCreationRequestDto categoryCreationRequestDto = categoryCreationRequestDtoMessage.getPayload();
+    public void receiveCategoryCreationRequestMessage(final Message<CategoryDto> categoryDtoMessage) {
+        final CategoryDto categoryDto = categoryDtoMessage.getPayload();
         log.info("CategoryCreationRequestDto message received: username={}, categoryName={}",
-                categoryCreationRequestDto.getUsername(), categoryCreationRequestDto.getCategoryName());
-        categoryService.createCustomCategory(categoryCreationRequestDto)
+                categoryDto.getUsername(), categoryDto.getName());
+        categoryService.createCustomCategory(categoryDto)
                 .doOnSuccess(createdCategory -> log.info("Category with name={} and username={} created.",
                         createdCategory.getName(), createdCategory.getUsername()))
                 .subscribe();

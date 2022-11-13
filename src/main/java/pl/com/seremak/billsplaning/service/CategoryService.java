@@ -8,7 +8,6 @@ import pl.com.seremak.billsplaning.messageQueue.MessagePublisher;
 import pl.com.seremak.billsplaning.repository.CategoryRepository;
 import pl.com.seremak.billsplaning.repository.CategorySearchRepository;
 import pl.com.seremak.simplebills.commons.dto.http.CategoryDto;
-import pl.com.seremak.simplebills.commons.dto.queue.CategoryCreationRequestDto;
 import pl.com.seremak.simplebills.commons.exceptions.ConflictException;
 import pl.com.seremak.simplebills.commons.model.Category;
 import pl.com.seremak.simplebills.commons.utils.CollectionUtils;
@@ -45,11 +44,12 @@ public class CategoryService {
 
 
     public Mono<Category> createCustomCategory(final String username, final CategoryDto categoryDto) {
-        return createCategory(username, categoryDto, Category.Type.CUSTOM);
+        final Category category = toCategory(username, categoryDto, Category.Type.CUSTOM);
+        return createCategory(category);
     }
 
-    public Mono<Category> createCustomCategory(final CategoryCreationRequestDto categoryCreationRequestDto) {
-        return createCategory(toCategory(categoryCreationRequestDto, Category.Type.CUSTOM));
+    public Mono<Category> createCustomCategory(final CategoryDto categoryDto) {
+        return createCategory(toCategory(categoryDto.getUsername(), categoryDto, Category.Type.CUSTOM));
     }
 
     public Flux<Category> createAllCategories(final Set<Category> categories) {
@@ -108,10 +108,6 @@ public class CategoryService {
         final List<Category> expenseStandardCategories = toCategories(username, expenseStandardCategoryNames, EXPENSE);
         final List<Category> allTypeStandardCategories = mergeLists(incomeStandardCategories, expenseStandardCategories);
         return findAllMissingCategories(username, userStandardCategories, allTypeStandardCategories);
-    }
-
-    private Mono<Category> createCategory(final String username, final CategoryDto categoryDto, final Category.Type type) {
-        return createCategory(toCategory(username, categoryDto, type));
     }
 
     private Mono<Category> createCategory(final Category category) {
@@ -184,8 +180,9 @@ public class CategoryService {
                 .mapNotNull(existingCategoryList -> getSoleElementOrThrowException(existingCategoryList, false))
                 .map(Category::getName)
                 .doOnNext(existingCategoryName -> log.info("Category with name={} found in database.", existingCategoryName))
-                .switchIfEmpty(Mono.just(toCategoryDto(finalReplacementCategoryName, deletedCategory.getTransactionType()))
-                        .flatMap(categoryDto -> createCategory(deletedCategory.getUsername(), categoryDto, categoryType))
+                .switchIfEmpty(Mono.just(toCategoryDto(deletedCategory.getUsername(), finalReplacementCategoryName, deletedCategory.getTransactionType()))
+                        .map(categoryDto -> toCategory(deletedCategory.getUsername(), categoryDto, categoryType))
+                        .flatMap(this::createCategory)
                         .map(Category::getName)
                         .doOnNext(createdCategoryName -> log.info("New category with name={} created.", createdCategoryName)));
     }
