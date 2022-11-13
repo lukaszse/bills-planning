@@ -49,7 +49,7 @@ public class CategoryService {
     }
 
     public Mono<Category> createCustomCategory(final CategoryDto categoryDto) {
-        return createCategory(toCategory(categoryDto.getUsername(), categoryDto, Category.Type.CUSTOM));
+        return createCategory(toCategory(categoryDto, Category.Type.CUSTOM));
     }
 
     public Flux<Category> createAllCategories(final Set<Category> categories) {
