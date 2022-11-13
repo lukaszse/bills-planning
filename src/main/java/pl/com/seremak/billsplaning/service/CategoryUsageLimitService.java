@@ -25,7 +25,7 @@ import static java.math.BigDecimal.ZERO;
 import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.ObjectUtils.defaultIfNull;
 import static pl.com.seremak.simplebills.commons.converter.CategoryUsageLimitConverter.categoryUsageLimitOf;
-import static pl.com.seremak.simplebills.commons.model.Transaction.Type.EXPENSE;
+import static pl.com.seremak.simplebills.commons.model.Category.TransactionType.EXPENSE;
 import static pl.com.seremak.simplebills.commons.utils.DateUtils.toYearMonthString;
 import static pl.com.seremak.simplebills.commons.utils.TransactionBalanceUtils.updateCategoryUsage;
 
