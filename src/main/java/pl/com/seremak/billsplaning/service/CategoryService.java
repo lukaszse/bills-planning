@@ -67,8 +67,8 @@ public class CategoryService {
                 .map(CollectionUtils::getSoleElementOrThrowException);
     }
 
-    public Mono<Category> updateCategory(final String username, final CategoryDto categoryDto) {
-        final Category categoryToUpdate = toCategory(username, categoryDto);
+    public Mono<Category> updateCategory(final String username, final String categoryName, final CategoryDto categoryDto) {
+        final Category categoryToUpdate = toCategory(username, categoryName, categoryDto);
         return categorySearchRepository.updateCategory(categoryToUpdate)
                 .doOnSuccess(this::updateCategoryUsageLimit);
     }

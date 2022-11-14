@@ -22,8 +22,6 @@ public class RabbitMQConfig {
     public static final String USER_CREATION_QUEUE = "userCreation";
     public static final String CATEGORY_QUEUE = "categoryQueue";
     public static final String TRANSACTION_QUEUE = "transaction";
-    public static final String CATEGORY_CREATION_REQUEST_QUEUE = "categoryCreationRequest";
-
     private final CachingConnectionFactory cachingConnectionFactory;
     private final ObjectMapper objectMapper;
 
@@ -62,10 +60,5 @@ public class RabbitMQConfig {
     @Bean
     public Queue transactionQueue() {
         return new Queue(TRANSACTION_QUEUE, false);
-    }
-
-    @Bean
-    public Queue categoryCreationRequestQueue() {
-        return new Queue(CATEGORY_CREATION_REQUEST_QUEUE, false);
     }
 }

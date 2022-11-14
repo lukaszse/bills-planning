@@ -58,12 +58,13 @@ public class CategoryEndpoint {
                 .map(ResponseEntity::ok);
     }
 
-    @PatchMapping(value = "{name}", produces = APPLICATION_JSON_VALUE)
+    @PatchMapping(value = "{categoryName}", produces = APPLICATION_JSON_VALUE)
     private Mono<ResponseEntity<Category>> updateCategory(final JwtAuthenticationToken principal,
-                                                          @Valid @RequestBody final CategoryDto categoryDto) {
+                                                          @Valid @RequestBody final CategoryDto categoryDto,
+                                                          @PathVariable final String categoryName) {
         final String username = JwtExtractionHelper.extractUsername(principal);
-        log.info("Updating Category with username={} and categoryName={}", username, categoryDto.getName());
-        return categoryService.updateCategory(username, categoryDto)
+        log.info("Updating Category with username={} and categoryName={}", username, categoryName);
+        return categoryService.updateCategory(username, categoryName, categoryDto)
                 .doOnSuccess(updatedCategory -> log.info("Category with username={} and categoryName={} updated.", updatedCategory.getUsername(), updatedCategory.getName()))
                 .map(ResponseEntity::ok);
     }
