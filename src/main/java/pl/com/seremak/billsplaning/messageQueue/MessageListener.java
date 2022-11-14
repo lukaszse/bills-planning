@@ -6,13 +6,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Component;
-import pl.com.seremak.billsplaning.service.CategoryService;
 import pl.com.seremak.billsplaning.service.TransactionPostingService;
 import pl.com.seremak.billsplaning.service.UserSetupService;
 import pl.com.seremak.simplebills.commons.dto.queue.TransactionEventDto;
 
-import static pl.com.seremak.billsplaning.config.RabbitMQConfig.TRANSACTION_QUEUE;
-import static pl.com.seremak.billsplaning.config.RabbitMQConfig.USER_CREATION_QUEUE;
+import static pl.com.seremak.simplebills.commons.constants.MessageQueue.TRANSACTION_EVENT_QUEUE;
+import static pl.com.seremak.simplebills.commons.constants.MessageQueue.USER_CREATION_QUEUE;
+
 
 @Slf4j
 @Component
@@ -21,8 +21,6 @@ public class MessageListener {
 
     private final UserSetupService userSetupService;
     private final TransactionPostingService transactionPostingService;
-    private final CategoryService categoryService;
-
 
     @RabbitListener(queues = USER_CREATION_QUEUE)
     public void receiveUserCreationMessage(final String username) {
@@ -30,7 +28,7 @@ public class MessageListener {
         userSetupService.setupUser(username);
     }
 
-    @RabbitListener(queues = TRANSACTION_QUEUE)
+    @RabbitListener(queues = TRANSACTION_EVENT_QUEUE)
     public void receiveTransactionMessage(final Message<TransactionEventDto> transactionMessage) {
         final TransactionEventDto transaction = transactionMessage.getPayload();
         log.info("Transaction message received: username={}, categoryName={}", transaction.getUsername(), transaction.getCategoryName());
