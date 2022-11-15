@@ -4,15 +4,14 @@ import com.mongodb.lang.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import pl.com.seremak.billsplaning.dto.CategoryDto;
-import pl.com.seremak.billsplaning.exceptions.ConflictException;
 import pl.com.seremak.billsplaning.messageQueue.MessagePublisher;
-import pl.com.seremak.billsplaning.messageQueue.queueDto.CategoryDeletionDto;
-import pl.com.seremak.billsplaning.model.Category;
 import pl.com.seremak.billsplaning.repository.CategoryRepository;
 import pl.com.seremak.billsplaning.repository.CategorySearchRepository;
-import pl.com.seremak.billsplaning.utils.CollectionUtils;
-import pl.com.seremak.billsplaning.utils.VersionedEntityUtils;
+import pl.com.seremak.simplebills.commons.dto.http.CategoryDto;
+import pl.com.seremak.simplebills.commons.exceptions.ConflictException;
+import pl.com.seremak.simplebills.commons.model.Category;
+import pl.com.seremak.simplebills.commons.utils.CollectionUtils;
+import pl.com.seremak.simplebills.commons.utils.VersionedEntityUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -24,12 +23,12 @@ import java.util.stream.Collectors;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.ObjectUtils.defaultIfNull;
-import static pl.com.seremak.billsplaning.converter.CategoryConverter.*;
-import static pl.com.seremak.billsplaning.model.Category.TransactionType.EXPENSE;
-import static pl.com.seremak.billsplaning.model.Category.TransactionType.INCOME;
 import static pl.com.seremak.billsplaning.utils.BillPlanConstants.MASTER_USER;
-import static pl.com.seremak.billsplaning.utils.CollectionUtils.getSoleElementOrThrowException;
-import static pl.com.seremak.billsplaning.utils.CollectionUtils.mergeLists;
+import static pl.com.seremak.simplebills.commons.converter.CategoryConverter.*;
+import static pl.com.seremak.simplebills.commons.model.Category.TransactionType.EXPENSE;
+import static pl.com.seremak.simplebills.commons.model.Category.TransactionType.INCOME;
+import static pl.com.seremak.simplebills.commons.utils.CollectionUtils.getSoleElementOrThrowException;
+import static pl.com.seremak.simplebills.commons.utils.CollectionUtils.mergeLists;
 
 @Slf4j
 @Service
@@ -45,7 +44,12 @@ public class CategoryService {
 
 
     public Mono<Category> createCustomCategory(final String username, final CategoryDto categoryDto) {
-        return createCategory(username, categoryDto, Category.Type.CUSTOM);
+        final Category category = toCategory(username, categoryDto, Category.Type.CUSTOM);
+        return createCategory(category);
+    }
+
+    public Mono<Category> createCustomCategory(final CategoryDto categoryDto) {
+        return createCategory(toCategory(categoryDto, Category.Type.CUSTOM));
     }
 
     public Flux<Category> createAllCategories(final Set<Category> categories) {
@@ -63,8 +67,8 @@ public class CategoryService {
                 .map(CollectionUtils::getSoleElementOrThrowException);
     }
 
-    public Mono<Category> updateCategory(final String username, final CategoryDto categoryDto) {
-        final Category categoryToUpdate = toCategory(username, categoryDto);
+    public Mono<Category> updateCategory(final String username, final String categoryName, final CategoryDto categoryDto) {
+        final Category categoryToUpdate = toCategory(username, categoryName, categoryDto);
         return categorySearchRepository.updateCategory(categoryToUpdate)
                 .doOnSuccess(this::updateCategoryUsageLimit);
     }
@@ -106,22 +110,23 @@ public class CategoryService {
         return findAllMissingCategories(username, userStandardCategories, allTypeStandardCategories);
     }
 
-    private Mono<Category> createCategory(final String username, final CategoryDto categoryDto, final Category.Type type) {
-        return categoryRepository.findCategoriesByUsernameAndName(username, categoryDto.getName())
+    private Mono<Category> createCategory(final Category category) {
+        return categoryRepository.findCategoriesByUsernameAndName(category.getUsername(), category.getName())
                 .collectList()
-                .mapNotNull(existingCategories -> existingCategories.isEmpty() ? toCategory(username, categoryDto, type) : null)
+                .mapNotNull(existingCategories -> existingCategories.isEmpty() ? category : null)
                 .map(VersionedEntityUtils::setMetadata)
                 .map(categoryRepository::save)
                 .flatMap(mono -> mono)
                 .doOnSuccess(this::createNewCategoryUsageLimit)
-                .switchIfEmpty(Mono.error(new ConflictException(CATEGORY_ALREADY_EXISTS_ERROR_MSG.formatted(username, categoryDto.getName()))));
+                .switchIfEmpty(Mono.error(new ConflictException(CATEGORY_ALREADY_EXISTS_ERROR_MSG.formatted(category.getUsername(), category.getName()))));
     }
+
 
     private Mono<String> reassignTransactionOfDeletedCategory(final Category deletedCategory,
                                                               @Nullable final String replacementCategoryName) {
         return findOrCreateReplacementCategory(deletedCategory, replacementCategoryName)
-                .doOnNext(existingReplacementCategoryName -> messagePublisher.sentCategoryDeletionMessage(
-                        CategoryDeletionDto.of(deletedCategory.getUsername(), deletedCategory.getName(), existingReplacementCategoryName)));
+                .doOnNext(existingReplacementCategoryName ->
+                        messagePublisher.sendCategoryEventMessage(toCategoryDeletionEventDto(deletedCategory, existingReplacementCategoryName)));
     }
 
     private static Set<Category> findAllMissingCategories(final String username,
@@ -175,8 +180,9 @@ public class CategoryService {
                 .mapNotNull(existingCategoryList -> getSoleElementOrThrowException(existingCategoryList, false))
                 .map(Category::getName)
                 .doOnNext(existingCategoryName -> log.info("Category with name={} found in database.", existingCategoryName))
-                .switchIfEmpty(Mono.just(toCategoryDto(finalReplacementCategoryName, deletedCategory.getTransactionType()))
-                        .flatMap(categoryDto -> createCategory(deletedCategory.getUsername(), categoryDto, categoryType))
+                .switchIfEmpty(Mono.just(toCategoryDto(deletedCategory.getUsername(), finalReplacementCategoryName, deletedCategory.getTransactionType()))
+                        .map(categoryDto -> toCategory(deletedCategory.getUsername(), categoryDto, categoryType))
+                        .flatMap(this::createCategory)
                         .map(Category::getName)
                         .doOnNext(createdCategoryName -> log.info("New category with name={} created.", createdCategoryName)));
     }

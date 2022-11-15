@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import pl.com.seremak.billsplaning.model.Balance;
 import pl.com.seremak.billsplaning.service.BalanceService;
-import pl.com.seremak.billsplaning.utils.JwtExtractionHelper;
+import pl.com.seremak.simplebills.commons.model.Balance;
+import pl.com.seremak.simplebills.commons.utils.JwtExtractionHelper;
 import reactor.core.publisher.Mono;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -24,12 +24,11 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 public class BalanceEndpoint {
 
     private final BalanceService balanceService;
-    private final JwtExtractionHelper jwtExtractionHelper;
 
 
     @GetMapping(produces = APPLICATION_JSON_VALUE)
     public Mono<ResponseEntity<Balance>> findBalance(final JwtAuthenticationToken principal) {
-        final String username = jwtExtractionHelper.extractUsername(principal);
+        final String username = JwtExtractionHelper.extractUsername(principal);
         return balanceService.findBalance(username)
                 .doOnSuccess(balance -> log.info("Balance for username={} found.", balance.getUsername()))
                 .map(ResponseEntity::ok);

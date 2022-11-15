@@ -2,7 +2,7 @@ package pl.com.seremak.billsplaning.repository;
 
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.stereotype.Repository;
-import pl.com.seremak.billsplaning.model.CategoryUsageLimit;
+import pl.com.seremak.simplebills.commons.model.CategoryUsageLimit;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 

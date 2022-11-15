@@ -1,7 +1,7 @@
 package pl.com.seremak.billsplaning.utils;
 
-import pl.com.seremak.billsplaning.exceptions.DuplicatedElementsException;
-import pl.com.seremak.billsplaning.exceptions.NotFoundException;
+import pl.com.seremak.simplebills.commons.exceptions.DuplicatedElementsException;
+import pl.com.seremak.simplebills.commons.exceptions.NotFoundException;
 
 import java.util.ArrayList;
 import java.util.Collection;
