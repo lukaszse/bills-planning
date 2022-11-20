@@ -6,7 +6,8 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 import pl.com.seremak.simplebills.commons.dto.queue.CategoryEventDto;
 
-import static pl.com.seremak.simplebills.commons.constants.MessageQueue.CATEGORY_EVENT_QUEUE;
+import static pl.com.seremak.simplebills.commons.constants.MessageQueue.CATEGORY_EVENT_SIMPLE_BILLS_QUEUE;
+import static pl.com.seremak.simplebills.commons.constants.MessageQueue.SIMPLE_BILLS_EXCHANGE;
 
 
 @Slf4j
@@ -17,7 +18,7 @@ public class MessagePublisher {
     private final RabbitTemplate rabbitTemplate;
 
     public void sendCategoryEventMessage(final CategoryEventDto categoryEventDto) {
-        rabbitTemplate.convertAndSend(CATEGORY_EVENT_QUEUE, categoryEventDto);
-        log.info("Message sent: queue={}, message={}", CATEGORY_EVENT_QUEUE, categoryEventDto);
+        rabbitTemplate.convertAndSend(SIMPLE_BILLS_EXCHANGE, CATEGORY_EVENT_SIMPLE_BILLS_QUEUE, categoryEventDto);
+        log.info("Message sent: queue={}, message={}", CATEGORY_EVENT_SIMPLE_BILLS_QUEUE, categoryEventDto);
     }
 }
