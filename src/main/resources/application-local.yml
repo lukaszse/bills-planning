@@ -20,7 +20,7 @@ server:
   port: 8081
 
 custom-properties:
-  simpleBillsGuiAppUrl: "http://localhost:8089"
+  simple-bills-gui: "http://localhost:8089"
   expense-categories:
     - food
     - travel
