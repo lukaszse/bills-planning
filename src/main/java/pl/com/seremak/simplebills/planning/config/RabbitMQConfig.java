@@ -70,26 +70,26 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    Binding userCreationSimpleBillsBinding(final Queue transactionEventPlanningQueue,
+    Binding userCreationSimpleBillsBinding(final Queue userCreationSimpleBillsQueue,
                                            final DirectExchange exchange) {
         return BindingBuilder
-                .bind(transactionEventPlanningQueue)
+                .bind(userCreationSimpleBillsQueue)
                 .to(exchange)
                 .with(USER_CREATION_SIMPLE_BILLS_QUEUE);
     }
 
     @Bean
-    Binding categoryDeletionPlaningBinding(final Queue transactionEventPlanningQueue,
+    Binding categoryDeletionPlaningBinding(final Queue categoryDeletionPlaningQueue,
                                            final DirectExchange exchange) {
         return BindingBuilder
-                .bind(transactionEventPlanningQueue)
+                .bind(categoryDeletionPlaningQueue)
                 .to(exchange)
                 .with(CATEGORY_EVENT_SIMPLE_BILLS_QUEUE);
     }
 
     @Bean
-    Binding transactionsEventsBillPlanningBinding(final Queue transactionEventPlanningQueue,
-                                                  final DirectExchange exchange) {
+    Binding transactionsEventsPlanningBinding(final Queue transactionEventPlanningQueue,
+                                              final DirectExchange exchange) {
         return BindingBuilder
                 .bind(transactionEventPlanningQueue)
                 .to(exchange)
@@ -97,10 +97,10 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    Binding transactionsEventsAssetManagementBinding(final Queue transactionEventPlanningQueue,
-                                                     final DirectExchange exchange) {
+    Binding transactionsEventsAssetsManagementBinding(final Queue transactionEventAssetManagementQueue,
+                                                      final DirectExchange exchange) {
         return BindingBuilder
-                .bind(transactionEventPlanningQueue)
+                .bind(transactionEventAssetManagementQueue)
                 .to(exchange)
                 .with(TRANSACTION_EVENT_ASSETS_MANAGEMENT_QUEUE);
     }
