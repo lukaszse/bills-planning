@@ -11,14 +11,14 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8085/realms/simple-bills
-          jwk-set-uri: http://localhost:8085/realms/simple-bills/protocol/openid-connect/certs
+          issuer-uri: https://37.233.102.95:8443/realms/simple-bills
+          jwk-set-uri: https://37.233.102.95:8443/realms/simple-bills/protocol/openid-connect/certs
 
 server:
-  port: 8081
+  port: 8080
 
 custom-properties:
-  simple-bills-gui: "http://localhost:8089"
+  simple-bills-gui: "https://simple-bills-lukaszse.cloud.okteto.net/"
   expense-categories:
     - food
     - travel
